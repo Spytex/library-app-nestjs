@@ -3,10 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
-import { UserModule } from './user/user.module';
-import { BookModule } from './book/book.module';
-import { LoanModule } from './loan/loan.module';
-import { ReviewModule } from './review/review.module';
+import { LibraryModule } from './library/library.module';
 
 @Module({
   imports: [
@@ -15,10 +12,7 @@ import { ReviewModule } from './review/review.module';
       envFilePath: '.env',
     }),
     DatabaseModule,
-    UserModule,
-    BookModule,
-    LoanModule,
-    ReviewModule,
+    LibraryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
