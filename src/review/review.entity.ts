@@ -27,7 +27,10 @@ export class Review {
   userId: number;
 
   @Index()
-  @ManyToOne(() => Book, (book) => book.reviews, { nullable: false })
+  @ManyToOne(() => Book, (book) => book.reviews, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'bookId' })
   book: Book;
 

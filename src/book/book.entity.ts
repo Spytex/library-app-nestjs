@@ -50,9 +50,9 @@ export class Book {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => Loan, (loan) => loan.book)
+  @OneToMany(() => Loan, (loan) => loan.book, { onDelete: 'CASCADE' })
   loans: Loan[];
 
-  @OneToMany(() => Review, (review) => review.book)
+  @OneToMany(() => Review, (review) => review.book, { onDelete: 'CASCADE' })
   reviews: Review[];
 }

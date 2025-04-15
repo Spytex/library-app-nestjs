@@ -34,7 +34,10 @@ export class Loan {
   userId: number;
 
   @Index()
-  @ManyToOne(() => Book, (book) => book.loans, { nullable: false })
+  @ManyToOne(() => Book, (book) => book.loans, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'bookId' })
   book: Book;
 
