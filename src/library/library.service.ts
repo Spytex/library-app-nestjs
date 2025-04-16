@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { UserService } from './user/user.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../user/user.entity';
 import { BookService } from './book/book.service';
 import { LoanService } from './loan/loan.service';
 import { ReviewService } from './review/review.service';
@@ -11,16 +13,25 @@ import { LoanStatus } from './loan/loan.entity';
 @Injectable()
 export class LibraryService {
   constructor(
-    private readonly userService: UserService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly bookService: BookService,
     private readonly loanService: LoanService,
     private readonly reviewService: ReviewService,
   ) {}
 
+  private async ensureUserExists(userId: number): Promise<User> {
+    const user = await this.userRepository.findOneBy({ id: userId });
+    if (!user) {
+      throw new NotFoundException(`User with ID "${userId}" not found`);
+    }
+    return user;
+  }
+
   async createBooking(createLoanDto: CreateLoanDto) {
     const { userId, bookId } = createLoanDto;
 
-    await this.userService.findOne(userId);
+    await this.ensureUserExists(userId);
     const book = await this.bookService.findOne(bookId);
 
     if (book.status !== BookStatus.AVAILABLE) {
@@ -70,12 +81,12 @@ export class LibraryService {
   }
 
   async getUserLoans(userId: number) {
-    await this.userService.findOne(userId);
+    await this.ensureUserExists(userId);
     return this.loanService.findUserLoans(userId);
   }
 
   async getUserReviews(userId: number, limit = 10, offset = 0) {
-    await this.userService.findOne(userId);
+    await this.ensureUserExists(userId);
     return this.reviewService.findUserReviews(userId, limit, offset);
   }
 
@@ -92,7 +103,7 @@ export class LibraryService {
   async createReview(createReviewDto: CreateReviewDto) {
     const { userId, bookId, loanId } = createReviewDto;
 
-    await this.userService.findOne(userId);
+    await this.ensureUserExists(userId);
     await this.bookService.findOne(bookId);
 
     if (loanId) {

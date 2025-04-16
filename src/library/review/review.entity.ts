@@ -1,6 +1,6 @@
 import { Book } from '../book/book.entity';
 import { Loan } from '../loan/loan.entity';
-import { User } from '../user/user.entity';
+import { User } from '../../user/user.entity';
 import {
   Entity,
   Column,

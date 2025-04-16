@@ -1,5 +1,5 @@
-import { Review } from '../review/review.entity';
-import { Loan } from '../loan/loan.entity';
+import { Review } from '../library/review/review.entity';
+import { Loan } from '../library/loan/loan.entity';
 import {
   Entity,
   Column,

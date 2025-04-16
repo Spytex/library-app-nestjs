@@ -1,6 +1,6 @@
 import { Book } from '../book/book.entity';
 import { Review } from '../review/review.entity';
-import { User } from '../user/user.entity';
+import { User } from '../../user/user.entity';
 import {
   Entity,
   Column,
