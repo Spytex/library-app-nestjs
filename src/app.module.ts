@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module';
 import { DrizzleModule } from './db/drizzle.module';
 import { LibraryModule } from './library/library.module';
 import { UserModule } from './user/user.module';
+import { RepositoryProviderModule } from './repository-provider/repository-provider.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UserModule } from './user/user.module';
     }),
     DatabaseModule,
     DrizzleModule,
+    RepositoryProviderModule,
     LibraryModule,
     UserModule,
   ],
