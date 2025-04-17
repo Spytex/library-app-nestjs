@@ -1,47 +1,93 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from './user.entity';
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  ConflictException,
+} from '@nestjs/common';
+import { DRIZZLE_CLIENT } from '../db/drizzle.module';
+import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import * as schema from '../db/schema';
+import { users } from '../db/schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { eq } from 'drizzle-orm';
+
+type DrizzleDB = PostgresJsDatabase<typeof schema>;
+type UserSelect = typeof schema.users.$inferSelect;
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    @Inject(DRIZZLE_CLIENT)
+    private db: DrizzleDB,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const newUser = this.userRepository.create(createUserDto);
-    return this.userRepository.save(newUser);
+  async create(createUserDto: CreateUserDto): Promise<UserSelect> {
+    const existingUser = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.email, createUserDto.email))
+      .limit(1);
+
+    if (existingUser.length > 0) {
+      throw new ConflictException(
+        `User with email "${createUserDto.email}" already exists`,
+      );
+    }
+
+    const [newUser] = await this.db
+      .insert(users)
+      .values(createUserDto)
+      .returning();
+    return newUser;
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find();
+  async findAll(): Promise<UserSelect[]> {
+    return this.db.select().from(users);
   }
 
-  async findOne(id: number): Promise<User> {
-    const user = await this.userRepository.findOneBy({ id });
+  async findOne(id: number): Promise<UserSelect> {
+    const [user] = await this.db.select().from(users).where(eq(users.id, id));
     if (!user) {
       throw new NotFoundException(`User with ID "${id}" not found`);
     }
     return user;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.userRepository.preload({
-      id: id,
-      ...updateUserDto,
-    });
-    if (!user) {
-      throw new NotFoundException(`User with ID "${id}" not found`);
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<UserSelect> {
+    await this.findOne(id);
+
+    if (updateUserDto.email) {
+      const existingUser = await this.db
+        .select()
+        .from(users)
+        .where(eq(users.email, updateUserDto.email))
+        .limit(1);
+
+      if (existingUser.length > 0 && existingUser[0].id !== id) {
+        throw new ConflictException(
+          `User with email "${updateUserDto.email}" already exists`,
+        );
+      }
     }
-    return this.userRepository.save(user);
+
+    const [updatedUser] = await this.db
+      .update(users)
+      .set({ ...updateUserDto, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+
+    if (!updatedUser) {
+      throw new NotFoundException(
+        `User with ID "${id}" not found during update`,
+      );
+    }
+    return updatedUser;
   }
 
   async remove(id: number): Promise<void> {
-    const user = await this.findOne(id);
-    await this.userRepository.remove(user);
+    await this.findOne(id);
+
+    const result = await this.db.delete(users).where(eq(users.id, id));
   }
 }

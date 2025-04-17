@@ -2,11 +2,17 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Loan, LoanStatus } from './loan.entity';
+import { DRIZZLE_CLIENT } from '../../db/drizzle.module';
+import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import * as schema from '../../db/schema';
+import { loans, loanStatusEnum } from '../../db/schema';
 import { CreateLoanDto } from './dto/create-loan.dto';
+import { eq, desc } from 'drizzle-orm';
+
+type DrizzleDB = PostgresJsDatabase<typeof schema>;
+type LoanSelect = typeof schema.loans.$inferSelect;
 
 @Injectable()
 export class LoanService {
@@ -14,68 +20,126 @@ export class LoanService {
   private readonly EXTENSION_DAYS = 7;
 
   constructor(
-    @InjectRepository(Loan)
-    private loanRepository: Repository<Loan>,
+    @Inject(DRIZZLE_CLIENT)
+    private db: DrizzleDB,
   ) {}
 
-  async createBooking(createLoanDto: CreateLoanDto): Promise<Loan> {
+  async createBooking(createLoanDto: CreateLoanDto): Promise<LoanSelect> {
     const { userId, bookId } = createLoanDto;
 
-    const newLoan = this.loanRepository.create({
-      userId,
-      bookId,
-      status: LoanStatus.BOOKED,
-      bookingDate: new Date(),
-    });
+    const [newLoan] = await this.db
+      .insert(loans)
+      .values({
+        userId,
+        bookId,
+        status: loanStatusEnum.enumValues[0], // BOOKED
+        bookingDate: new Date(),
+      })
+      .returning();
 
-    return this.loanRepository.save(newLoan);
+    return newLoan;
   }
 
-  async pickupLoan(loanId: number): Promise<Loan> {
+  async pickupLoan(loanId: number): Promise<LoanSelect> {
     const loan = await this.findOne(loanId);
 
-    loan.status = LoanStatus.ACTIVE;
-    loan.loanDate = new Date();
-    loan.dueDate = this.calculateDueDate(loan.loanDate);
+    const loanDate = new Date();
+    const dueDate = this.calculateDueDate(loanDate);
 
-    return this.loanRepository.save(loan);
+    const [updatedLoan] = await this.db
+      .update(loans)
+      .set({
+        status: loanStatusEnum.enumValues[1], // ACTIVE
+        loanDate: loanDate,
+        dueDate: dueDate,
+        updatedAt: new Date(),
+      })
+      .where(eq(loans.id, loanId))
+      .returning();
+
+    if (!updatedLoan) {
+      throw new NotFoundException(
+        `Loan with ID "${loanId}" not found during pickup`,
+      );
+    }
+    return updatedLoan;
   }
 
-  async returnLoan(loanId: number): Promise<Loan> {
-    const loan = await this.findOne(loanId);
+  async returnLoan(loanId: number): Promise<LoanSelect> {
+    await this.findOne(loanId);
 
-    loan.status = LoanStatus.RETURNED;
-    loan.returnDate = new Date();
+    const [updatedLoan] = await this.db
+      .update(loans)
+      .set({
+        status: loanStatusEnum.enumValues[2], // RETURNED
+        returnDate: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(loans.id, loanId))
+      .returning();
 
-    return this.loanRepository.save(loan);
+    if (!updatedLoan) {
+      throw new NotFoundException(
+        `Loan with ID "${loanId}" not found during return`,
+      );
+    }
+    return updatedLoan;
   }
 
-  async extendLoan(loanId: number): Promise<Loan> {
+  async extendLoan(loanId: number): Promise<LoanSelect> {
     const loan = await this.findOne(loanId);
 
     if (!loan.dueDate) {
       throw new BadRequestException(
-        `Loan with ID "${loanId}" has no due date set.`,
+        `Loan with ID "${loanId}" has no due date set, cannot extend.`,
       );
     }
 
-    loan.dueDate = this.addDays(loan.dueDate, this.EXTENSION_DAYS);
+    if (loan.status === loanStatusEnum.enumValues[2]) {
+      // RETURNED
+      throw new BadRequestException(
+        `Cannot extend a returned loan (ID: "${loanId}").`,
+      );
+    }
 
-    return this.loanRepository.save(loan);
+    const newDueDate = this.addDays(loan.dueDate, this.EXTENSION_DAYS);
+
+    const [updatedLoan] = await this.db
+      .update(loans)
+      .set({
+        dueDate: newDueDate,
+        updatedAt: new Date(),
+        ...(loan.status === loanStatusEnum.enumValues[3] // OVERDUE
+          ? { status: loanStatusEnum.enumValues[1] } // ACTIVE
+          : {}),
+      })
+      .where(eq(loans.id, loanId))
+      .returning();
+
+    if (!updatedLoan) {
+      throw new NotFoundException(
+        `Loan with ID "${loanId}" not found during extension`,
+      );
+    }
+    return updatedLoan;
   }
 
-  async findOne(id: number): Promise<Loan> {
-    const loan = await this.loanRepository.findOneBy({ id });
+  async findOne(id: number): Promise<LoanSelect> {
+    const [loan] = await this.db.select().from(loans).where(eq(loans.id, id));
     if (!loan) {
       throw new NotFoundException(`Loan with ID "${id}" not found`);
     }
     return loan;
   }
 
-  async findLoanWithDetails(id: number): Promise<Loan> {
-    const loan = await this.loanRepository.findOne({
-      where: { id },
-      relations: ['book'],
+  async findOneWithRelations(id: number): Promise<any> {
+    const loan = await this.db.query.loans.findFirst({
+      where: eq(loans.id, id),
+      with: {
+        book: true,
+        user: true,
+        review: true,
+      },
     });
     if (!loan) {
       throw new NotFoundException(`Loan with ID "${id}" not found`);
@@ -83,19 +147,29 @@ export class LoanService {
     return loan;
   }
 
-  async findUserLoans(userId: number): Promise<Loan[]> {
-    return this.loanRepository.find({
-      where: { userId },
-      order: { createdAt: 'DESC' },
-      relations: ['book'],
+  async findUserLoans(userId: number): Promise<any[]> {
+    return this.db.query.loans.findMany({
+      where: eq(loans.userId, userId),
+      orderBy: desc(loans.createdAt),
+      with: {
+        book: true,
+      },
     });
   }
 
-  async findBookLoans(bookId: number): Promise<Loan[]> {
-    return this.loanRepository.find({
-      where: { bookId },
-      order: { createdAt: 'DESC' },
-      relations: ['user'],
+  async findBookLoans(bookId: number): Promise<any[]> {
+    return this.db.query.loans.findMany({
+      where: eq(loans.bookId, bookId),
+      orderBy: desc(loans.createdAt),
+      with: {
+        user: {
+          columns: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
   }
 

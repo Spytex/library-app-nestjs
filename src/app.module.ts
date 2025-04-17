@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { DatabaseModule } from './database/database.module';
 import { LibraryModule } from './library/library.module';
 import { UserModule } from './user/user.module';
+import { DrizzleModule } from './db/drizzle.module';
 
 @Module({
   imports: [
@@ -12,7 +12,7 @@ import { UserModule } from './user/user.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    DatabaseModule,
+    DrizzleModule,
     LibraryModule,
     UserModule,
   ],

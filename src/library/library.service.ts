@@ -1,117 +1,161 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../user/user.entity';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import * as schema from '../db/schema';
+import { bookStatusEnum, loanStatusEnum } from '../db/schema';
+import { UserService } from '../user/user.service';
 import { BookService } from './book/book.service';
 import { LoanService } from './loan/loan.service';
 import { ReviewService } from './review/review.service';
 import { CreateLoanDto } from './loan/dto/create-loan.dto';
 import { CreateReviewDto } from './review/dto/create-review.dto';
-import { BookStatus } from './book/book.entity';
-import { LoanStatus } from './loan/loan.entity';
+
+type UserSelect = typeof schema.users.$inferSelect;
+type LoanSelect = typeof schema.loans.$inferSelect;
+type ReviewSelect = typeof schema.reviews.$inferSelect;
 
 @Injectable()
 export class LibraryService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly userService: UserService,
     private readonly bookService: BookService,
     private readonly loanService: LoanService,
     private readonly reviewService: ReviewService,
   ) {}
 
-  private async ensureUserExists(userId: number): Promise<User> {
-    const user = await this.userRepository.findOneBy({ id: userId });
-    if (!user) {
-      throw new NotFoundException(`User with ID "${userId}" not found`);
+  private async ensureUserExists(userId: number): Promise<UserSelect> {
+    try {
+      const user = await this.userService.findOne(userId);
+      return user;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`User with ID "${userId}" not found`);
+      }
+      throw error;
     }
-    return user;
   }
 
-  async createBooking(createLoanDto: CreateLoanDto) {
+  async createBooking(createLoanDto: CreateLoanDto): Promise<LoanSelect> {
     const { userId, bookId } = createLoanDto;
 
     await this.ensureUserExists(userId);
     const book = await this.bookService.findOne(bookId);
 
-    if (book.status !== BookStatus.AVAILABLE) {
-      throw new Error(
+    if (book.status !== bookStatusEnum.enumValues[0]) {
+      // AVAILABLE
+      throw new BadRequestException(
         `Book with ID "${bookId}" is currently ${book.status} and cannot be booked.`,
       );
     }
 
     const loan = await this.loanService.createBooking(createLoanDto);
 
-    await this.bookService.updateStatus(bookId, BookStatus.BOOKED);
+    try {
+      await this.bookService.updateStatus(bookId, bookStatusEnum.enumValues[1]); // BOOKED
+    } catch (error) {
+      console.error('Failed to update book status after creating loan', error);
+      throw error;
+    }
 
     return loan;
   }
 
-  async pickupLoan(loanId: number) {
-    const loan = await this.loanService.findLoanWithDetails(loanId);
+  async pickupLoan(loanId: number): Promise<LoanSelect> {
+    const loan = await this.loanService.findOneWithRelations(loanId);
 
-    if (loan.status !== LoanStatus.BOOKED) {
-      throw new Error(
-        `Loan with ID "${loanId}" has invalid status for pickup.`,
+    if (loan.status !== loanStatusEnum.enumValues[0]) {
+      // BOOKED
+      throw new BadRequestException(
+        `Loan with ID "${loanId}" has status ${loan.status}, cannot be picked up.`,
       );
     }
 
     const updatedLoan = await this.loanService.pickupLoan(loanId);
-    await this.bookService.updateStatus(loan.bookId, BookStatus.BORROWED);
+
+    try {
+      await this.bookService.updateStatus(
+        loan.bookId,
+        bookStatusEnum.enumValues[2],
+      ); // BORROWED
+    } catch (error) {
+      console.error(
+        'Failed to update book status after picking up loan',
+        error,
+      );
+      throw error;
+    }
 
     return updatedLoan;
   }
 
-  async returnLoan(loanId: number) {
-    const loan = await this.loanService.findLoanWithDetails(loanId);
+  async returnLoan(loanId: number): Promise<LoanSelect> {
+    const loan = await this.loanService.findOneWithRelations(loanId);
 
     if (
-      loan.status !== LoanStatus.ACTIVE &&
-      loan.status !== LoanStatus.OVERDUE
+      loan.status !== loanStatusEnum.enumValues[1] && // ACTIVE
+      loan.status !== loanStatusEnum.enumValues[3] // OVERDUE
     ) {
-      throw new Error(
-        `Loan with ID "${loanId}" has invalid status for return.`,
+      throw new BadRequestException(
+        `Loan with ID "${loanId}" has status ${loan.status}, cannot be returned.`,
       );
     }
 
     const updatedLoan = await this.loanService.returnLoan(loanId);
-    await this.bookService.updateStatus(loan.bookId, BookStatus.AVAILABLE);
+
+    try {
+      await this.bookService.updateStatus(
+        loan.bookId,
+        bookStatusEnum.enumValues[0],
+      ); // AVAILABLE
+    } catch (error) {
+      console.error('Failed to update book status after returning loan', error);
+      throw error;
+    }
 
     return updatedLoan;
   }
 
-  async getUserLoans(userId: number) {
+  async getUserLoans(userId: number): Promise<any[]> {
     await this.ensureUserExists(userId);
     return this.loanService.findUserLoans(userId);
   }
 
-  async getUserReviews(userId: number, limit = 10, offset = 0) {
+  async getUserReviews(userId: number, limit = 10, offset = 0): Promise<any[]> {
     await this.ensureUserExists(userId);
     return this.reviewService.findUserReviews(userId, limit, offset);
   }
 
-  async getBookLoans(bookId: number) {
+  async getBookLoans(bookId: number): Promise<any[]> {
     await this.bookService.findOne(bookId);
     return this.loanService.findBookLoans(bookId);
   }
 
-  async getBookReviews(bookId: number, limit = 10, offset = 0) {
+  async getBookReviews(bookId: number, limit = 10, offset = 0): Promise<any[]> {
     await this.bookService.findOne(bookId);
     return this.reviewService.findBookReviews(bookId, limit, offset);
   }
 
-  async createReview(createReviewDto: CreateReviewDto) {
+  async createReview(createReviewDto: CreateReviewDto): Promise<ReviewSelect> {
     const { userId, bookId, loanId } = createReviewDto;
 
     await this.ensureUserExists(userId);
     await this.bookService.findOne(bookId);
 
     if (loanId) {
-      const loan = await this.loanService.findOne(loanId);
-      if (loan.userId !== userId || loan.bookId !== bookId) {
-        throw new Error(
-          `Loan with ID "${loanId}" does not match the provided user and book.`,
-        );
+      try {
+        const loan = await this.loanService.findOne(loanId);
+        if (loan.userId !== userId || loan.bookId !== bookId) {
+          throw new BadRequestException(
+            `Loan with ID "${loanId}" does not match the provided user (ID: ${userId}) and book (ID: ${bookId}).`,
+          );
+        }
+      } catch (error) {
+        if (error instanceof NotFoundException) {
+          throw new NotFoundException(`Loan with ID "${loanId}" not found.`);
+        }
+        throw error;
       }
     }
 

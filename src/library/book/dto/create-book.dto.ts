@@ -3,10 +3,8 @@ import {
   IsNotEmpty,
   IsISBN,
   IsOptional,
-  IsEnum,
   MinLength,
 } from 'class-validator';
-import { BookStatus } from '../book.entity';
 
 export class CreateBookDto {
   @IsString()
