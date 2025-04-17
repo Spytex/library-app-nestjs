@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, ilike, sql } from 'drizzle-orm';
+import { and, eq, ilike, count as drizzleCount, SQL } from 'drizzle-orm';
 import { DRIZZLE_CLIENT, DrizzleDB } from '../../../../db/drizzle.module';
 import * as schema from '../../../../db/schema';
 import { BookStatus } from '../../book.entity';
@@ -8,36 +8,44 @@ import { FindBooksQueryDto } from '../../dto/find-books-query.dto';
 import { UpdateBookDto } from '../../dto/update-book.dto';
 import {
   IBookRepository,
-  BookRepresentation,
+  IBookCountCriteria,
 } from '../book.repository.interface';
+import { BookDto } from '../../dto/book.dto';
+import { BookSelect } from '../../../../db/schema';
 
 @Injectable()
 export class DrizzleBookRepository implements IBookRepository {
   constructor(@Inject(DRIZZLE_CLIENT) private db: DrizzleDB) {}
 
-  async create(createBookDto: CreateBookDto): Promise<BookRepresentation> {
+  private mapToDto(book: BookSelect): BookDto {
+    return {
+      id: book.id,
+      title: book.title,
+      author: book.author,
+      isbn: book.isbn,
+      description: book.description ?? null,
+      status: book.status as BookStatus,
+      createdAt: book.createdAt,
+      updatedAt: book.updatedAt,
+    };
+  }
+
+  async create(createBookDto: CreateBookDto): Promise<BookDto> {
     const result = await this.db
       .insert(schema.books)
       .values(createBookDto)
       .returning();
-    return result[0];
+    return this.mapToDto(result[0]);
   }
 
-  async findAll(queryDto: FindBooksQueryDto): Promise<BookRepresentation[]> {
+  async findAll(queryDto: FindBooksQueryDto): Promise<BookDto[]> {
     const { limit = 10, offset = 0, title, author, status } = queryDto;
-    const conditions: any[] = [];
+    const conditions: SQL[] = [];
+    if (status) conditions.push(eq(schema.books.status, status));
+    if (title) conditions.push(ilike(schema.books.title, `%${title}%`));
+    if (author) conditions.push(ilike(schema.books.author, `%${author}%`));
 
-    if (status) {
-      conditions.push(eq(schema.books.status, status));
-    }
-    if (title) {
-      conditions.push(ilike(schema.books.title, `%${title}%`));
-    }
-    if (author) {
-      conditions.push(ilike(schema.books.author, `%${author}%`));
-    }
-
-    const query = this.db
+    const books = await this.db
       .select()
       .from(schema.books)
       .where(and(...conditions))
@@ -45,37 +53,37 @@ export class DrizzleBookRepository implements IBookRepository {
       .offset(offset)
       .orderBy(schema.books.createdAt);
 
-    return query;
+    return books.map(this.mapToDto);
   }
 
-  async findById(id: number): Promise<BookRepresentation | null> {
+  async findById(id: number): Promise<BookDto | null> {
     const result = await this.db
       .select()
       .from(schema.books)
       .where(eq(schema.books.id, id))
       .limit(1);
-    return result.length > 0 ? result[0] : null;
+    return result.length > 0 ? this.mapToDto(result[0]) : null;
   }
 
-  async findByIsbn(isbn: string): Promise<BookRepresentation | null> {
+  async findByIsbn(isbn: string): Promise<BookDto | null> {
     const result = await this.db
       .select()
       .from(schema.books)
       .where(eq(schema.books.isbn, isbn))
       .limit(1);
-    return result.length > 0 ? result[0] : null;
+    return result.length > 0 ? this.mapToDto(result[0]) : null;
   }
 
   async update(
     id: number,
     updateBookDto: UpdateBookDto,
-  ): Promise<BookRepresentation | null> {
+  ): Promise<BookDto | null> {
     const result = await this.db
       .update(schema.books)
       .set({ ...updateBookDto, updatedAt: new Date() })
       .where(eq(schema.books.id, id))
       .returning();
-    return result.length > 0 ? result[0] : null;
+    return result.length > 0 ? this.mapToDto(result[0]) : null;
   }
 
   async remove(id: number): Promise<boolean> {
@@ -86,22 +94,29 @@ export class DrizzleBookRepository implements IBookRepository {
     return result.length > 0;
   }
 
-  async updateStatus(
-    id: number,
-    status: BookStatus,
-  ): Promise<BookRepresentation | null> {
+  async updateStatus(id: number, status: BookStatus): Promise<BookDto | null> {
     const result = await this.db
       .update(schema.books)
       .set({ status: status, updatedAt: new Date() })
       .where(eq(schema.books.id, id))
       .returning();
-    return result.length > 0 ? result[0] : null;
+    return result.length > 0 ? this.mapToDto(result[0]) : null;
   }
 
-  async count(criteria?: any): Promise<number> {
+  async count(criteria?: IBookCountCriteria): Promise<number> {
+    const conditions: SQL[] = [];
+    if (criteria?.status)
+      conditions.push(eq(schema.books.status, criteria.status));
+    if (criteria?.title)
+      conditions.push(ilike(schema.books.title, `%${criteria.title}%`));
+    if (criteria?.author)
+      conditions.push(ilike(schema.books.author, `%${criteria.author}%`));
+    if (criteria?.isbn) conditions.push(eq(schema.books.isbn, criteria.isbn));
+
     const result = await this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(schema.books);
-    return Number(result[0].count);
+      .select({ count: drizzleCount(schema.books.id) })
+      .from(schema.books)
+      .where(and(...conditions));
+    return result[0].count;
   }
 }

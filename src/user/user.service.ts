@@ -9,8 +9,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import {
   IUserRepository,
   USER_REPOSITORY,
-  UserRepresentation,
 } from './repositories/user.repository.interface';
+import { UserDto } from './dto/user.dto';
 
 @Injectable()
 export class UserService {
@@ -19,7 +19,7 @@ export class UserService {
     private readonly userRepository: IUserRepository,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<UserRepresentation> {
+  async create(createUserDto: CreateUserDto): Promise<UserDto> {
     const existingUser = await this.userRepository.findByEmail(
       createUserDto.email,
     );
@@ -31,11 +31,11 @@ export class UserService {
     return this.userRepository.create(createUserDto);
   }
 
-  async findAll(): Promise<UserRepresentation[]> {
+  async findAll(): Promise<UserDto[]> {
     return this.userRepository.findAll();
   }
 
-  async findOne(id: number): Promise<UserRepresentation> {
+  async findOne(id: number): Promise<UserDto> {
     const user = await this.userRepository.findById(id);
     if (!user) {
       throw new NotFoundException(`User with ID "${id}" not found`);
@@ -43,7 +43,7 @@ export class UserService {
     return user;
   }
 
-  async findOneByEmail(email: string): Promise<UserRepresentation> {
+  async findOneByEmail(email: string): Promise<UserDto> {
     const user = await this.userRepository.findByEmail(email);
     if (!user) {
       throw new NotFoundException(`User with email "${email}" not found`);
@@ -51,10 +51,7 @@ export class UserService {
     return user;
   }
 
-  async update(
-    id: number,
-    updateUserDto: UpdateUserDto,
-  ): Promise<UserRepresentation> {
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<UserDto> {
     if (updateUserDto.email) {
       const existingUser = await this.userRepository.findByEmail(
         updateUserDto.email,
@@ -80,7 +77,7 @@ export class UserService {
     }
   }
 
-  async ensureUserExists(userId: number): Promise<UserRepresentation> {
+  async ensureUserExists(userId: number): Promise<UserDto> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new NotFoundException(`User with ID "${userId}" not found`);

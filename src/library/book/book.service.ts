@@ -4,15 +4,15 @@ import {
   Inject,
   ConflictException,
 } from '@nestjs/common';
-import { BookStatus } from './book.entity'; // Keep enum
+import { BookStatus } from './book.entity';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { FindBooksQueryDto } from './dto/find-books-query.dto';
 import {
   IBookRepository,
   BOOK_REPOSITORY,
-  BookRepresentation,
 } from './repositories/book.repository.interface';
+import { BookDto } from './dto/book.dto';
 
 @Injectable()
 export class BookService {
@@ -21,7 +21,7 @@ export class BookService {
     private readonly bookRepository: IBookRepository,
   ) {}
 
-  async create(createBookDto: CreateBookDto): Promise<BookRepresentation> {
+  async create(createBookDto: CreateBookDto): Promise<BookDto> {
     const existingBook = await this.bookRepository.findByIsbn(
       createBookDto.isbn,
     );
@@ -33,11 +33,11 @@ export class BookService {
     return this.bookRepository.create(createBookDto);
   }
 
-  async findAll(queryDto: FindBooksQueryDto): Promise<BookRepresentation[]> {
+  async findAll(queryDto: FindBooksQueryDto): Promise<BookDto[]> {
     return this.bookRepository.findAll(queryDto);
   }
 
-  async findOne(id: number): Promise<BookRepresentation> {
+  async findOne(id: number): Promise<BookDto> {
     const book = await this.bookRepository.findById(id);
     if (!book) {
       throw new NotFoundException(`Book with ID "${id}" not found`);
@@ -45,14 +45,11 @@ export class BookService {
     return book;
   }
 
-  async findOneByIsbn(isbn: string): Promise<BookRepresentation | null> {
+  async findOneByIsbn(isbn: string): Promise<BookDto | null> {
     return this.bookRepository.findByIsbn(isbn);
   }
 
-  async update(
-    id: number,
-    updateBookDto: UpdateBookDto,
-  ): Promise<BookRepresentation> {
+  async update(id: number, updateBookDto: UpdateBookDto): Promise<BookDto> {
     if (updateBookDto.isbn) {
       const existingBook = await this.bookRepository.findByIsbn(
         updateBookDto.isbn,
@@ -90,10 +87,7 @@ export class BookService {
     }
   }
 
-  async updateStatus(
-    id: number,
-    status: BookStatus,
-  ): Promise<BookRepresentation> {
+  async updateStatus(id: number, status: BookStatus): Promise<BookDto> {
     const updatedBook = await this.bookRepository.updateStatus(id, status);
     if (!updatedBook) {
       throw new NotFoundException(`Book with ID "${id}" not found`);

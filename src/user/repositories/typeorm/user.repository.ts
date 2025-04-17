@@ -5,6 +5,7 @@ import { User } from '../../user.entity';
 import { CreateUserDto } from '../../dto/create-user.dto';
 import { UpdateUserDto } from '../../dto/update-user.dto';
 import { IUserRepository } from '../user.repository.interface';
+import { UserDto } from '../../dto/user.dto';
 
 @Injectable()
 export class TypeOrmUserRepository implements IUserRepository {
@@ -13,24 +14,35 @@ export class TypeOrmUserRepository implements IUserRepository {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  private mapToDto(user: User): UserDto {
+    return user;
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<UserDto> {
     const newUser = this.userRepository.create(createUserDto);
-    return this.userRepository.save(newUser);
+    const savedUser = await this.userRepository.save(newUser);
+    return this.mapToDto(savedUser);
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find();
+  async findAll(): Promise<UserDto[]> {
+    const users = await this.userRepository.find();
+    return users.map(this.mapToDto);
   }
 
-  async findById(id: number): Promise<User | null> {
-    return this.userRepository.findOneBy({ id });
+  async findById(id: number): Promise<UserDto | null> {
+    const user = await this.userRepository.findOneBy({ id });
+    return user ? this.mapToDto(user) : null;
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOneBy({ email });
+  async findByEmail(email: string): Promise<UserDto | null> {
+    const user = await this.userRepository.findOneBy({ email });
+    return user ? this.mapToDto(user) : null;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User | null> {
+  async update(
+    id: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserDto | null> {
     const userToUpdate = await this.userRepository.preload({
       id: id,
       ...updateUserDto,
@@ -38,7 +50,8 @@ export class TypeOrmUserRepository implements IUserRepository {
     if (!userToUpdate) {
       return null;
     }
-    return this.userRepository.save(userToUpdate);
+    const updatedUser = await this.userRepository.save(userToUpdate);
+    return this.mapToDto(updatedUser);
   }
 
   async remove(id: number): Promise<boolean> {

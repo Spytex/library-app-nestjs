@@ -1,28 +1,32 @@
 import { CreateReviewDto } from '../dto/create-review.dto';
-import { Review } from '../review.entity';
-import { ReviewSelect } from '../../../db/schema';
+import { ReviewDto } from '../dto/review.dto';
 
-export type ReviewRepresentation = Review | ReviewSelect;
+export interface IReviewCountCriteria {
+  userId?: number;
+  bookId?: number;
+  rating?: number;
+  hasComment?: boolean;
+}
 
 export interface IReviewRepository {
-  create(createReviewDto: CreateReviewDto): Promise<ReviewRepresentation>;
-  findById(id: number): Promise<ReviewRepresentation | null>;
+  create(createReviewDto: CreateReviewDto): Promise<ReviewDto>;
+  findById(id: number): Promise<ReviewDto | null>;
   findUserReviewForBook(
     userId: number,
     bookId: number,
-  ): Promise<ReviewRepresentation | null>;
+  ): Promise<ReviewDto | null>;
   findBookReviews(
     bookId: number,
     limit: number,
     offset: number,
-  ): Promise<ReviewRepresentation[]>;
+  ): Promise<ReviewDto[]>;
   findUserReviews(
     userId: number,
     limit: number,
     offset: number,
-  ): Promise<ReviewRepresentation[]>;
+  ): Promise<ReviewDto[]>;
   remove(id: number): Promise<boolean>;
-  count(criteria?: any): Promise<number>;
+  count(criteria?: IReviewCountCriteria): Promise<number>;
 }
 
 export const REVIEW_REPOSITORY = 'IReviewRepository';

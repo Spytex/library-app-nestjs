@@ -1,19 +1,13 @@
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
-import { User } from '../user.entity';
-import { UserSelect } from '../../db/schema';
-
-export type UserRepresentation = User | UserSelect;
+import { UserDto } from '../dto/user.dto';
 
 export interface IUserRepository {
-  create(createUserDto: CreateUserDto): Promise<UserRepresentation>;
-  findAll(): Promise<UserRepresentation[]>;
-  findById(id: number): Promise<UserRepresentation | null>;
-  findByEmail(email: string): Promise<UserRepresentation | null>;
-  update(
-    id: number,
-    updateUserDto: UpdateUserDto,
-  ): Promise<UserRepresentation | null>;
+  create(createUserDto: CreateUserDto): Promise<UserDto>;
+  findAll(): Promise<UserDto[]>;
+  findById(id: number): Promise<UserDto | null>;
+  findByEmail(email: string): Promise<UserDto | null>;
+  update(id: number, updateUserDto: UpdateUserDto): Promise<UserDto | null>;
   remove(id: number): Promise<boolean>;
 }
 

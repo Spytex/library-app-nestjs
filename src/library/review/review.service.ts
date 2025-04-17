@@ -8,8 +8,8 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import {
   IReviewRepository,
   REVIEW_REPOSITORY,
-  ReviewRepresentation,
 } from './repositories/review.repository.interface';
+import { ReviewDto } from './dto/review.dto';
 
 @Injectable()
 export class ReviewService {
@@ -18,9 +18,7 @@ export class ReviewService {
     private readonly reviewRepository: IReviewRepository,
   ) {}
 
-  async create(
-    createReviewDto: CreateReviewDto,
-  ): Promise<ReviewRepresentation> {
+  async create(createReviewDto: CreateReviewDto): Promise<ReviewDto> {
     const { userId, bookId } = createReviewDto;
 
     const existingReview = await this.reviewRepository.findUserReviewForBook(
@@ -41,7 +39,7 @@ export class ReviewService {
     bookId: number,
     limit: number = 10,
     offset: number = 0,
-  ): Promise<ReviewRepresentation[]> {
+  ): Promise<ReviewDto[]> {
     return this.reviewRepository.findBookReviews(bookId, limit, offset);
   }
 
@@ -49,11 +47,11 @@ export class ReviewService {
     userId: number,
     limit: number = 10,
     offset: number = 0,
-  ): Promise<ReviewRepresentation[]> {
+  ): Promise<ReviewDto[]> {
     return this.reviewRepository.findUserReviews(userId, limit, offset);
   }
 
-  async findOne(id: number): Promise<ReviewRepresentation> {
+  async findOne(id: number): Promise<ReviewDto> {
     const review = await this.reviewRepository.findById(id);
     if (!review) {
       throw new NotFoundException(`Review with ID "${id}" not found`);

@@ -1,8 +1,13 @@
 import { CreateLoanDto } from '../dto/create-loan.dto';
-import { Loan, LoanStatus } from '../loan.entity';
-import { LoanSelect } from '../../../db/schema';
+import { LoanStatus } from '../loan.entity';
+import { LoanDto } from '../dto/loan.dto';
 
-export type LoanRepresentation = Loan | LoanSelect;
+export interface ILoanCountCriteria {
+  userId?: number;
+  bookId?: number;
+  status?: LoanStatus;
+  isOverdue?: boolean;
+}
 
 export interface ILoanRepository {
   create(
@@ -11,20 +16,17 @@ export interface ILoanRepository {
     bookingDate?: Date,
     loanDate?: Date,
     dueDate?: Date,
-  ): Promise<LoanRepresentation>;
-  findById(id: number): Promise<LoanRepresentation | null>;
+  ): Promise<LoanDto>;
+  findById(id: number): Promise<LoanDto | null>;
   findByIdWithRelations(
     id: number,
     relations: string[],
-  ): Promise<LoanRepresentation | null>;
-  findUserLoans(userId: number): Promise<LoanRepresentation[]>;
-  findBookLoans(bookId: number): Promise<LoanRepresentation[]>;
-  update(
-    id: number,
-    data: Partial<LoanRepresentation>,
-  ): Promise<LoanRepresentation | null>;
+  ): Promise<LoanDto | null>;
+  findUserLoans(userId: number): Promise<LoanDto[]>;
+  findBookLoans(bookId: number): Promise<LoanDto[]>;
+  update(id: number, data: Partial<LoanDto>): Promise<LoanDto | null>;
   remove(id: number): Promise<boolean>;
-  count(criteria?: any): Promise<number>;
+  count(criteria?: ILoanCountCriteria): Promise<number>;
 }
 
 export const LOAN_REPOSITORY = 'ILoanRepository';

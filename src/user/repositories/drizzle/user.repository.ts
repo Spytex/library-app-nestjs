@@ -4,55 +4,65 @@ import { DRIZZLE_CLIENT, DrizzleDB } from '../../../db/drizzle.module';
 import * as schema from '../../../db/schema';
 import { CreateUserDto } from '../../dto/create-user.dto';
 import { UpdateUserDto } from '../../dto/update-user.dto';
-import {
-  IUserRepository,
-  UserRepresentation,
-} from '../user.repository.interface';
+import { IUserRepository } from '../user.repository.interface';
+import { UserDto } from '../../dto/user.dto';
+import { UserSelect } from '../../../db/schema';
 
 @Injectable()
 export class DrizzleUserRepository implements IUserRepository {
   constructor(@Inject(DRIZZLE_CLIENT) private db: DrizzleDB) {}
 
-  async create(createUserDto: CreateUserDto): Promise<UserRepresentation> {
+  private mapToDto(user: UserSelect): UserDto {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<UserDto> {
     const result = await this.db
       .insert(schema.users)
       .values(createUserDto)
       .returning();
-    return result[0];
+    return this.mapToDto(result[0]);
   }
 
-  async findAll(): Promise<UserRepresentation[]> {
-    return this.db.select().from(schema.users);
+  async findAll(): Promise<UserDto[]> {
+    const users = await this.db.select().from(schema.users);
+    return users.map(this.mapToDto);
   }
 
-  async findById(id: number): Promise<UserRepresentation | null> {
+  async findById(id: number): Promise<UserDto | null> {
     const result = await this.db
       .select()
       .from(schema.users)
       .where(eq(schema.users.id, id))
       .limit(1);
-    return result.length > 0 ? result[0] : null;
+    return result.length > 0 ? this.mapToDto(result[0]) : null;
   }
 
-  async findByEmail(email: string): Promise<UserRepresentation | null> {
+  async findByEmail(email: string): Promise<UserDto | null> {
     const result = await this.db
       .select()
       .from(schema.users)
       .where(eq(schema.users.email, email))
       .limit(1);
-    return result.length > 0 ? result[0] : null;
+    return result.length > 0 ? this.mapToDto(result[0]) : null;
   }
 
   async update(
     id: number,
     updateUserDto: UpdateUserDto,
-  ): Promise<UserRepresentation | null> {
+  ): Promise<UserDto | null> {
     const result = await this.db
       .update(schema.users)
       .set({ ...updateUserDto, updatedAt: new Date() })
       .where(eq(schema.users.id, id))
       .returning();
-    return result.length > 0 ? result[0] : null;
+    return result.length > 0 ? this.mapToDto(result[0]) : null;
   }
 
   async remove(id: number): Promise<boolean> {
