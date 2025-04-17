@@ -15,55 +15,18 @@ import {
   IReviewCountCriteria,
 } from '../review.repository.interface';
 import { ReviewDto } from '../../dto/review.dto';
-import { ReviewSelect, UserSelect, BookSelect } from '../../../../db/schema';
-import { BookStatus } from '../../../book/book.entity';
+import { mapDrizzleReviewToDto } from '../../../../common/mappers';
 
 @Injectable()
 export class DrizzleReviewRepository implements IReviewRepository {
   constructor(@Inject(DRIZZLE_CLIENT) private db: DrizzleDB) {}
-
-  private mapToDto(
-    review: ReviewSelect & { user?: UserSelect; book?: BookSelect },
-  ): ReviewDto {
-    return {
-      id: review.id,
-      userId: review.userId,
-      bookId: review.bookId,
-      loanId: review.loanId ?? null,
-      rating: review.rating,
-      comment: review.comment ?? null,
-      createdAt: review.createdAt,
-      updatedAt: review.updatedAt,
-      user: review.user
-        ? {
-            id: review.user.id,
-            name: review.user.name,
-            email: review.user.email,
-            createdAt: review.user.createdAt,
-            updatedAt: review.user.updatedAt,
-          }
-        : undefined,
-      book: review.book
-        ? {
-            id: review.book.id,
-            title: review.book.title,
-            author: review.book.author,
-            isbn: review.book.isbn,
-            description: review.book.description ?? null,
-            status: review.book.status as BookStatus,
-            createdAt: review.book.createdAt,
-            updatedAt: review.book.updatedAt,
-          }
-        : undefined,
-    };
-  }
 
   async create(createReviewDto: CreateReviewDto): Promise<ReviewDto> {
     const result = await this.db
       .insert(schema.reviews)
       .values(createReviewDto)
       .returning();
-    return this.mapToDto(result[0]);
+    return mapDrizzleReviewToDto(result[0]);
   }
 
   async findById(id: number): Promise<ReviewDto | null> {
@@ -71,7 +34,7 @@ export class DrizzleReviewRepository implements IReviewRepository {
       where: eq(schema.reviews.id, id),
       with: { user: true, book: true },
     });
-    return result ? this.mapToDto(result) : null;
+    return result ? mapDrizzleReviewToDto(result) : null;
   }
 
   async findUserReviewForBook(
@@ -85,7 +48,7 @@ export class DrizzleReviewRepository implements IReviewRepository {
       ),
       with: { user: true, book: true },
     });
-    return result ? this.mapToDto(result) : null;
+    return result ? mapDrizzleReviewToDto(result) : null;
   }
 
   async findBookReviews(
@@ -100,7 +63,7 @@ export class DrizzleReviewRepository implements IReviewRepository {
       orderBy: (reviews, { desc }) => [desc(reviews.createdAt)],
       with: { user: true },
     });
-    return reviews.map(this.mapToDto);
+    return reviews.map(mapDrizzleReviewToDto);
   }
 
   async findUserReviews(
@@ -115,7 +78,7 @@ export class DrizzleReviewRepository implements IReviewRepository {
       orderBy: (reviews, { desc }) => [desc(reviews.createdAt)],
       with: { book: true },
     });
-    return reviews.map(this.mapToDto);
+    return reviews.map(mapDrizzleReviewToDto);
   }
 
   async remove(id: number): Promise<boolean> {

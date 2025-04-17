@@ -11,31 +11,18 @@ import {
   IBookCountCriteria,
 } from '../book.repository.interface';
 import { BookDto } from '../../dto/book.dto';
-import { BookSelect } from '../../../../db/schema';
+import { mapDrizzleBookToDto } from '../../../../common/mappers';
 
 @Injectable()
 export class DrizzleBookRepository implements IBookRepository {
   constructor(@Inject(DRIZZLE_CLIENT) private db: DrizzleDB) {}
-
-  private mapToDto(book: BookSelect): BookDto {
-    return {
-      id: book.id,
-      title: book.title,
-      author: book.author,
-      isbn: book.isbn,
-      description: book.description ?? null,
-      status: book.status as BookStatus,
-      createdAt: book.createdAt,
-      updatedAt: book.updatedAt,
-    };
-  }
 
   async create(createBookDto: CreateBookDto): Promise<BookDto> {
     const result = await this.db
       .insert(schema.books)
       .values(createBookDto)
       .returning();
-    return this.mapToDto(result[0]);
+    return mapDrizzleBookToDto(result[0]);
   }
 
   async findAll(queryDto: FindBooksQueryDto): Promise<BookDto[]> {
@@ -53,7 +40,7 @@ export class DrizzleBookRepository implements IBookRepository {
       .offset(offset)
       .orderBy(schema.books.createdAt);
 
-    return books.map(this.mapToDto);
+    return books.map(mapDrizzleBookToDto);
   }
 
   async findById(id: number): Promise<BookDto | null> {
@@ -62,7 +49,7 @@ export class DrizzleBookRepository implements IBookRepository {
       .from(schema.books)
       .where(eq(schema.books.id, id))
       .limit(1);
-    return result.length > 0 ? this.mapToDto(result[0]) : null;
+    return result.length > 0 ? mapDrizzleBookToDto(result[0]) : null;
   }
 
   async findByIsbn(isbn: string): Promise<BookDto | null> {
@@ -71,7 +58,7 @@ export class DrizzleBookRepository implements IBookRepository {
       .from(schema.books)
       .where(eq(schema.books.isbn, isbn))
       .limit(1);
-    return result.length > 0 ? this.mapToDto(result[0]) : null;
+    return result.length > 0 ? mapDrizzleBookToDto(result[0]) : null;
   }
 
   async update(
@@ -83,7 +70,7 @@ export class DrizzleBookRepository implements IBookRepository {
       .set({ ...updateBookDto, updatedAt: new Date() })
       .where(eq(schema.books.id, id))
       .returning();
-    return result.length > 0 ? this.mapToDto(result[0]) : null;
+    return result.length > 0 ? mapDrizzleBookToDto(result[0]) : null;
   }
 
   async remove(id: number): Promise<boolean> {
@@ -100,7 +87,7 @@ export class DrizzleBookRepository implements IBookRepository {
       .set({ status: status, updatedAt: new Date() })
       .where(eq(schema.books.id, id))
       .returning();
-    return result.length > 0 ? this.mapToDto(result[0]) : null;
+    return result.length > 0 ? mapDrizzleBookToDto(result[0]) : null;
   }
 
   async count(criteria?: IBookCountCriteria): Promise<number> {

@@ -8,8 +8,7 @@ import {
   ILoanCountCriteria,
 } from '../loan.repository.interface';
 import { LoanDto } from '../../dto/loan.dto';
-import { UserDto } from '../../../../user/dto/user.dto';
-import { BookDto } from '../../../book/dto/book.dto';
+import { mapLoanToDto } from '../../../../common/mappers';
 
 @Injectable()
 export class TypeOrmLoanRepository implements ILoanRepository {
@@ -17,43 +16,6 @@ export class TypeOrmLoanRepository implements ILoanRepository {
     @InjectRepository(Loan)
     private readonly loanRepository: Repository<Loan>,
   ) {}
-
-  private mapToDto(loan: Loan): LoanDto {
-    const dto: LoanDto = {
-      id: loan.id,
-      userId: loan.userId,
-      bookId: loan.bookId,
-      bookingDate: loan.bookingDate,
-      loanDate: loan.loanDate,
-      dueDate: loan.dueDate,
-      returnDate: loan.returnDate,
-      status: loan.status,
-      createdAt: loan.createdAt,
-      updatedAt: loan.updatedAt,
-      user: loan.user
-        ? ({
-            id: loan.user.id,
-            name: loan.user.name,
-            email: loan.user.email,
-            createdAt: loan.user.createdAt,
-            updatedAt: loan.user.updatedAt,
-          } as UserDto)
-        : undefined,
-      book: loan.book
-        ? ({
-            id: loan.book.id,
-            title: loan.book.title,
-            author: loan.book.author,
-            isbn: loan.book.isbn,
-            description: loan.book.description,
-            status: loan.book.status,
-            createdAt: loan.book.createdAt,
-            updatedAt: loan.book.updatedAt,
-          } as BookDto)
-        : undefined,
-    };
-    return dto;
-  }
 
   async create(
     createLoanDto: CreateLoanDto,
@@ -70,12 +32,12 @@ export class TypeOrmLoanRepository implements ILoanRepository {
       dueDate,
     });
     const savedLoan = await this.loanRepository.save(newLoan);
-    return this.mapToDto(savedLoan);
+    return mapLoanToDto(savedLoan);
   }
 
   async findById(id: number): Promise<LoanDto | null> {
     const loan = await this.loanRepository.findOneBy({ id });
-    return loan ? this.mapToDto(loan) : null;
+    return loan ? mapLoanToDto(loan) : null;
   }
 
   async findByIdWithRelations(
@@ -86,7 +48,7 @@ export class TypeOrmLoanRepository implements ILoanRepository {
       where: { id },
       relations,
     });
-    return loan ? this.mapToDto(loan) : null;
+    return loan ? mapLoanToDto(loan) : null;
   }
 
   async findUserLoans(userId: number): Promise<LoanDto[]> {
@@ -95,7 +57,7 @@ export class TypeOrmLoanRepository implements ILoanRepository {
       order: { createdAt: 'DESC' },
       relations: ['book'],
     });
-    return loans.map(this.mapToDto);
+    return loans.map(mapLoanToDto);
   }
 
   async findBookLoans(bookId: number): Promise<LoanDto[]> {
@@ -104,7 +66,7 @@ export class TypeOrmLoanRepository implements ILoanRepository {
       order: { createdAt: 'DESC' },
       relations: ['user'],
     });
-    return loans.map(this.mapToDto);
+    return loans.map(mapLoanToDto);
   }
 
   async update(id: number, data: Partial<LoanDto>): Promise<LoanDto | null> {
@@ -112,7 +74,7 @@ export class TypeOrmLoanRepository implements ILoanRepository {
     const loanToUpdate = await this.loanRepository.preload({ id, ...loanData });
     if (!loanToUpdate) return null;
     const updatedLoan = await this.loanRepository.save(loanToUpdate);
-    return this.mapToDto(updatedLoan);
+    return mapLoanToDto(updatedLoan);
   }
 
   async remove(id: number): Promise<boolean> {

@@ -10,6 +10,7 @@ import {
   IBookCountCriteria,
 } from '../book.repository.interface';
 import { BookDto } from '../../dto/book.dto';
+import { mapBookToDto } from '../../../../common/mappers';
 
 @Injectable()
 export class TypeOrmBookRepository implements IBookRepository {
@@ -18,14 +19,10 @@ export class TypeOrmBookRepository implements IBookRepository {
     private readonly bookRepository: Repository<Book>,
   ) {}
 
-  private mapToDto(book: Book): BookDto {
-    return book;
-  }
-
   async create(createBookDto: CreateBookDto): Promise<BookDto> {
     const newBook = this.bookRepository.create(createBookDto);
     const savedBook = await this.bookRepository.save(newBook);
-    return this.mapToDto(savedBook);
+    return mapBookToDto(savedBook);
   }
 
   async findAll(queryDto: FindBooksQueryDto): Promise<BookDto[]> {
@@ -42,17 +39,17 @@ export class TypeOrmBookRepository implements IBookRepository {
       skip: offset,
       order: { createdAt: 'DESC' },
     });
-    return books.map(this.mapToDto);
+    return books.map(mapBookToDto);
   }
 
   async findById(id: number): Promise<BookDto | null> {
     const book = await this.bookRepository.findOneBy({ id });
-    return book ? this.mapToDto(book) : null;
+    return book ? mapBookToDto(book) : null;
   }
 
   async findByIsbn(isbn: string): Promise<BookDto | null> {
     const book = await this.bookRepository.findOneBy({ isbn });
-    return book ? this.mapToDto(book) : null;
+    return book ? mapBookToDto(book) : null;
   }
 
   async update(
@@ -65,7 +62,7 @@ export class TypeOrmBookRepository implements IBookRepository {
     });
     if (!bookToUpdate) return null;
     const updatedBook = await this.bookRepository.save(bookToUpdate);
-    return this.mapToDto(updatedBook);
+    return mapBookToDto(updatedBook);
   }
 
   async remove(id: number): Promise<boolean> {
