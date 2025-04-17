@@ -1,6 +1,6 @@
+import { BookSelect } from 'src/database/drizzle/schema';
 import { Book, BookStatus } from '../../library/book/book.entity';
 import { BookDto } from '../../library/book/dto/book.dto';
-import { BookSelect } from '../../db/schema';
 
 export function mapBookToDto(book: Book): BookDto {
   return {

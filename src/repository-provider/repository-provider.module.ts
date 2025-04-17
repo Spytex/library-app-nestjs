@@ -22,8 +22,7 @@ import { DrizzleUserRepository } from '../user/repositories/drizzle/user.reposit
 import { DrizzleBookRepository } from '../library/book/repositories/drizzle/book.repository';
 import { DrizzleLoanRepository } from '../library/loan/repositories/drizzle/loan.repository';
 import { DrizzleReviewRepository } from '../library/review/repositories/drizzle/review.repository';
-
-import { DRIZZLE_CLIENT, DrizzleDB } from '../db/drizzle.module';
+import { DRIZZLE_CLIENT, DrizzleDB } from 'src/database/drizzle/drizzle.module';
 
 const createRepositoryProvider = (
   provide: string | symbol,

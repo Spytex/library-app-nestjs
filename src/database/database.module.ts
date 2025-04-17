@@ -1,30 +1,39 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { Module, DynamicModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { DrizzleModule } from './drizzle/drizzle.module';
+import { TypeOrmModule } from './typeorm/typeorm.module';
 
-@Module({
-  imports: [
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USERNAME'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_DATABASE'),
-
-        entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-
-        // TODO: remove this in production
-        synchronize: false,
-
-        logging: false,
-      }),
-      inject: [ConfigService],
-    }),
-  ],
-
-  exports: [],
-})
-export class DatabaseModule {}
+@Module({})
+export class DatabaseModule {
+  static forRoot(): DynamicModule {
+    return {
+      module: DatabaseModule,
+      imports: [
+        ConfigModule,
+        {
+          module: class DynamicOrmModule {},
+          imports: [
+            {
+              module: class DynamicOrmProvider {},
+              imports: [DrizzleModule, TypeOrmModule],
+              providers: [
+                {
+                  provide: 'DATABASE_ORM',
+                  inject: [ConfigService],
+                  useFactory: (configService: ConfigService) => {
+                    const ormType = configService.get<string>('DB_ORM_TYPE');
+                    console.log(`Using ORM type: ${ormType}`);
+                    return ormType;
+                  },
+                },
+              ],
+              exports: ['DATABASE_ORM'],
+            },
+          ],
+          global: true,
+        },
+      ],
+      global: true,
+    };
+  }
+}

@@ -1,8 +1,12 @@
 import { Review } from '../../library/review/review.entity';
 import { ReviewDto } from '../../library/review/dto/review.dto';
-import { ReviewSelect, UserSelect, BookSelect } from '../../db/schema';
 import { mapUserToDto, mapDrizzleUserToDto } from './user.mapper';
 import { mapBookToDto, mapDrizzleBookToDto } from './book.mapper';
+import {
+  BookSelect,
+  ReviewSelect,
+  UserSelect,
+} from 'src/database/drizzle/schema';
 
 export function mapReviewToDto(review: Review): ReviewDto {
   return {

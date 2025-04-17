@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { DRIZZLE_CLIENT, DrizzleDB } from '../../../db/drizzle.module';
-import * as schema from '../../../db/schema';
 import { CreateUserDto } from '../../dto/create-user.dto';
 import { UpdateUserDto } from '../../dto/update-user.dto';
 import { IUserRepository } from '../user.repository.interface';
 import { UserDto } from '../../dto/user.dto';
 import { mapDrizzleUserToDto } from '../../../common/mappers';
+import { DRIZZLE_CLIENT, DrizzleDB } from 'src/database/drizzle/drizzle.module';
+import * as schema from 'src/database/drizzle/schema';
 
 @Injectable()
 export class DrizzleUserRepository implements IUserRepository {

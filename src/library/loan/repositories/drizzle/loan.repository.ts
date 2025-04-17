@@ -1,7 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, count as drizzleCount, lt, SQL } from 'drizzle-orm';
-import { DRIZZLE_CLIENT, DrizzleDB } from '../../../../db/drizzle.module';
-import * as schema from '../../../../db/schema';
 import { LoanStatus } from '../../loan.entity';
 import { CreateLoanDto } from '../../dto/create-loan.dto';
 import {
@@ -10,6 +8,8 @@ import {
 } from '../loan.repository.interface';
 import { LoanDto } from '../../dto/loan.dto';
 import { mapDrizzleLoanToDto } from '../../../../common/mappers';
+import { DRIZZLE_CLIENT, DrizzleDB } from 'src/database/drizzle/drizzle.module';
+import * as schema from 'src/database/drizzle/schema';
 
 @Injectable()
 export class DrizzleLoanRepository implements ILoanRepository {

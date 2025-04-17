@@ -1,7 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, ilike, count as drizzleCount, SQL } from 'drizzle-orm';
-import { DRIZZLE_CLIENT, DrizzleDB } from '../../../../db/drizzle.module';
-import * as schema from '../../../../db/schema';
 import { BookStatus } from '../../book.entity';
 import { CreateBookDto } from '../../dto/create-book.dto';
 import { FindBooksQueryDto } from '../../dto/find-books-query.dto';
@@ -12,6 +10,8 @@ import {
 } from '../book.repository.interface';
 import { BookDto } from '../../dto/book.dto';
 import { mapDrizzleBookToDto } from '../../../../common/mappers';
+import { DRIZZLE_CLIENT, DrizzleDB } from 'src/database/drizzle/drizzle.module';
+import * as schema from 'src/database/drizzle/schema';
 
 @Injectable()
 export class DrizzleBookRepository implements IBookRepository {

@@ -1,6 +1,6 @@
 import { User } from '../../user/user.entity';
 import { UserDto } from '../../user/dto/user.dto';
-import { UserSelect } from '../../db/schema';
+import { UserSelect } from 'src/database/drizzle/schema';
 
 export function mapUserToDto(user: User): UserDto {
   return {

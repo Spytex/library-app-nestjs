@@ -7,8 +7,6 @@ import {
   isNull,
   SQL,
 } from 'drizzle-orm';
-import { DRIZZLE_CLIENT, DrizzleDB } from '../../../../db/drizzle.module';
-import * as schema from '../../../../db/schema';
 import { CreateReviewDto } from '../../dto/create-review.dto';
 import {
   IReviewRepository,
@@ -16,6 +14,8 @@ import {
 } from '../review.repository.interface';
 import { ReviewDto } from '../../dto/review.dto';
 import { mapDrizzleReviewToDto } from '../../../../common/mappers';
+import { DRIZZLE_CLIENT, DrizzleDB } from 'src/database/drizzle/drizzle.module';
+import * as schema from 'src/database/drizzle/schema';
 
 @Injectable()
 export class DrizzleReviewRepository implements IReviewRepository {

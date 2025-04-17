@@ -1,8 +1,12 @@
 import { Loan, LoanStatus } from '../../library/loan/loan.entity';
 import { LoanDto } from '../../library/loan/dto/loan.dto';
-import { LoanSelect, UserSelect, BookSelect } from '../../db/schema';
 import { mapUserToDto, mapDrizzleUserToDto } from './user.mapper';
 import { mapBookToDto, mapDrizzleBookToDto } from './book.mapper';
+import {
+  BookSelect,
+  LoanSelect,
+  UserSelect,
+} from 'src/database/drizzle/schema';
 
 export function mapLoanToDto(loan: Loan): LoanDto {
   return {
