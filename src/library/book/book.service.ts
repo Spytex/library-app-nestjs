@@ -1,87 +1,74 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindManyOptions, Like, FindOptionsWhere } from 'typeorm';
-import { Book, BookStatus } from './book.entity';
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  ConflictException,
+} from '@nestjs/common';
+import { BookStatus } from './book.entity'; // Keep enum
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { FindBooksQueryDto } from './dto/find-books-query.dto';
+import {
+  IBookRepository,
+  BOOK_REPOSITORY,
+  BookRepresentation,
+} from './repositories/book.repository.interface';
 
 @Injectable()
 export class BookService {
   constructor(
-    @InjectRepository(Book)
-    private bookRepository: Repository<Book>,
+    @Inject(BOOK_REPOSITORY)
+    private readonly bookRepository: IBookRepository,
   ) {}
 
-  async create(createBookDto: CreateBookDto): Promise<Book> {
-    const existingBook = await this.bookRepository.findOneBy({
-      isbn: createBookDto.isbn,
-    });
+  async create(createBookDto: CreateBookDto): Promise<BookRepresentation> {
+    const existingBook = await this.bookRepository.findByIsbn(
+      createBookDto.isbn,
+    );
     if (existingBook) {
-      throw new NotFoundException(
+      throw new ConflictException(
         `Book with ISBN "${createBookDto.isbn}" already exists.`,
       );
     }
-    const newBook = this.bookRepository.create(createBookDto);
-    return this.bookRepository.save(newBook);
+    return this.bookRepository.create(createBookDto);
   }
 
-  async findAll(queryDto: FindBooksQueryDto): Promise<Book[]> {
-    const { status, title, author, limit, offset } = queryDto;
-
-    const whereClause: FindOptionsWhere<Book> = {};
-
-    if (status) {
-      whereClause.status = status;
-    }
-    if (title) {
-      whereClause.title = Like(`%${title}%`);
-    }
-    if (author) {
-      whereClause.author = Like(`%${author}%`);
-    }
-
-    const findOptions: FindManyOptions<Book> = {
-      where: whereClause,
-      take: limit || 10,
-      skip: offset || 0,
-    };
-
-    return this.bookRepository.find(findOptions);
+  async findAll(queryDto: FindBooksQueryDto): Promise<BookRepresentation[]> {
+    return this.bookRepository.findAll(queryDto);
   }
 
-  async findOne(id: number): Promise<Book> {
-    const book = await this.bookRepository.findOneBy({ id });
+  async findOne(id: number): Promise<BookRepresentation> {
+    const book = await this.bookRepository.findById(id);
     if (!book) {
       throw new NotFoundException(`Book with ID "${id}" not found`);
     }
     return book;
   }
 
-  async findOneByIsbn(isbn: string): Promise<Book | null> {
-    return this.bookRepository.findOneBy({ isbn });
+  async findOneByIsbn(isbn: string): Promise<BookRepresentation | null> {
+    return this.bookRepository.findByIsbn(isbn);
   }
 
-  async update(id: number, updateBookDto: UpdateBookDto): Promise<Book> {
+  async update(
+    id: number,
+    updateBookDto: UpdateBookDto,
+  ): Promise<BookRepresentation> {
     if (updateBookDto.isbn) {
-      const existingBook = await this.bookRepository.findOneBy({
-        isbn: updateBookDto.isbn,
-      });
+      const existingBook = await this.bookRepository.findByIsbn(
+        updateBookDto.isbn,
+      );
       if (existingBook && existingBook.id !== id) {
-        throw new NotFoundException(
+        throw new ConflictException(
           `Book with ISBN "${updateBookDto.isbn}" already exists.`,
         );
       }
     }
 
-    const book = await this.bookRepository.preload({
-      id: id,
-      ...updateBookDto,
-    });
-    if (!book) {
+    const updatedBook = await this.bookRepository.update(id, updateBookDto);
+    if (!updatedBook) {
       throw new NotFoundException(`Book with ID "${id}" not found`);
     }
-    return this.bookRepository.save(book);
+    return updatedBook;
   }
 
   async remove(id: number): Promise<void> {
@@ -90,20 +77,27 @@ export class BookService {
       book.status === BookStatus.BORROWED ||
       book.status === BookStatus.BOOKED
     ) {
-      throw new NotFoundException(
+      throw new ConflictException(
         `Cannot delete book with ID "${id}" because it is currently ${book.status}.`,
       );
     }
 
-    const result = await this.bookRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Book with ID "${id}" not found`);
+    const deleted = await this.bookRepository.remove(id);
+    if (!deleted) {
+      throw new NotFoundException(
+        `Book with ID "${id}" not found or could not be deleted.`,
+      );
     }
   }
 
-  async updateStatus(id: number, status: BookStatus): Promise<Book> {
-    const book = await this.findOne(id);
-    book.status = status;
-    return this.bookRepository.save(book);
+  async updateStatus(
+    id: number,
+    status: BookStatus,
+  ): Promise<BookRepresentation> {
+    const updatedBook = await this.bookRepository.updateStatus(id, status);
+    if (!updatedBook) {
+      throw new NotFoundException(`Book with ID "${id}" not found`);
+    }
+    return updatedBook;
   }
 }

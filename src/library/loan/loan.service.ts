@@ -2,11 +2,15 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Loan, LoanStatus } from './loan.entity';
+import { LoanStatus } from './loan.entity';
 import { CreateLoanDto } from './dto/create-loan.dto';
+import {
+  ILoanRepository,
+  LOAN_REPOSITORY,
+  LoanRepresentation,
+} from './repositories/loan.repository.interface';
 
 @Injectable()
 export class LoanService {
@@ -14,43 +18,54 @@ export class LoanService {
   private readonly EXTENSION_DAYS = 7;
 
   constructor(
-    @InjectRepository(Loan)
-    private loanRepository: Repository<Loan>,
+    @Inject(LOAN_REPOSITORY)
+    private readonly loanRepository: ILoanRepository,
   ) {}
 
-  async createBooking(createLoanDto: CreateLoanDto): Promise<Loan> {
-    const { userId, bookId } = createLoanDto;
+  async createBooking(
+    createLoanDto: CreateLoanDto,
+  ): Promise<LoanRepresentation> {
+    return this.loanRepository.create(
+      createLoanDto,
+      LoanStatus.BOOKED,
+      new Date(),
+    );
+  }
 
-    const newLoan = this.loanRepository.create({
-      userId,
-      bookId,
-      status: LoanStatus.BOOKED,
-      bookingDate: new Date(),
+  async pickupLoan(loanId: number): Promise<LoanRepresentation> {
+    const loan = await this.findOne(loanId);
+
+    const updatedLoan = await this.loanRepository.update(loanId, {
+      status: LoanStatus.ACTIVE,
+      loanDate: new Date(),
+      dueDate: this.calculateDueDate(new Date()),
     });
 
-    return this.loanRepository.save(newLoan);
+    if (!updatedLoan) {
+      throw new NotFoundException(
+        `Loan with ID "${loanId}" not found during update.`,
+      );
+    }
+    return updatedLoan;
   }
 
-  async pickupLoan(loanId: number): Promise<Loan> {
-    const loan = await this.findOne(loanId);
+  async returnLoan(loanId: number): Promise<LoanRepresentation> {
+    await this.findOne(loanId);
 
-    loan.status = LoanStatus.ACTIVE;
-    loan.loanDate = new Date();
-    loan.dueDate = this.calculateDueDate(loan.loanDate);
+    const updatedLoan = await this.loanRepository.update(loanId, {
+      status: LoanStatus.RETURNED,
+      returnDate: new Date(),
+    });
 
-    return this.loanRepository.save(loan);
+    if (!updatedLoan) {
+      throw new NotFoundException(
+        `Loan with ID "${loanId}" not found during update.`,
+      );
+    }
+    return updatedLoan;
   }
 
-  async returnLoan(loanId: number): Promise<Loan> {
-    const loan = await this.findOne(loanId);
-
-    loan.status = LoanStatus.RETURNED;
-    loan.returnDate = new Date();
-
-    return this.loanRepository.save(loan);
-  }
-
-  async extendLoan(loanId: number): Promise<Loan> {
+  async extendLoan(loanId: number): Promise<LoanRepresentation> {
     const loan = await this.findOne(loanId);
 
     if (!loan.dueDate) {
@@ -59,44 +74,40 @@ export class LoanService {
       );
     }
 
-    loan.dueDate = this.addDays(loan.dueDate, this.EXTENSION_DAYS);
+    const updatedLoan = await this.loanRepository.update(loanId, {
+      dueDate: this.addDays(loan.dueDate, this.EXTENSION_DAYS),
+    });
 
-    return this.loanRepository.save(loan);
+    if (!updatedLoan) {
+      throw new NotFoundException(
+        `Loan with ID "${loanId}" not found during update.`,
+      );
+    }
+    return updatedLoan;
   }
 
-  async findOne(id: number): Promise<Loan> {
-    const loan = await this.loanRepository.findOneBy({ id });
+  async findOne(id: number): Promise<LoanRepresentation> {
+    const loan = await this.loanRepository.findById(id);
     if (!loan) {
       throw new NotFoundException(`Loan with ID "${id}" not found`);
     }
     return loan;
   }
 
-  async findLoanWithDetails(id: number): Promise<Loan> {
-    const loan = await this.loanRepository.findOne({
-      where: { id },
-      relations: ['book'],
-    });
+  async findLoanWithDetails(id: number): Promise<LoanRepresentation> {
+    const loan = await this.loanRepository.findByIdWithRelations(id, ['book']);
     if (!loan) {
       throw new NotFoundException(`Loan with ID "${id}" not found`);
     }
     return loan;
   }
 
-  async findUserLoans(userId: number): Promise<Loan[]> {
-    return this.loanRepository.find({
-      where: { userId },
-      order: { createdAt: 'DESC' },
-      relations: ['book'],
-    });
+  async findUserLoans(userId: number): Promise<LoanRepresentation[]> {
+    return this.loanRepository.findUserLoans(userId);
   }
 
-  async findBookLoans(bookId: number): Promise<Loan[]> {
-    return this.loanRepository.find({
-      where: { bookId },
-      order: { createdAt: 'DESC' },
-      relations: ['user'],
-    });
+  async findBookLoans(bookId: number): Promise<LoanRepresentation[]> {
+    return this.loanRepository.findBookLoans(bookId);
   }
 
   private calculateDueDate(startDate: Date): Date {

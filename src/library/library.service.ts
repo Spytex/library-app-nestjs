@@ -1,7 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../user/user.entity';
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
+
 import { BookService } from './book/book.service';
 import { LoanService } from './loan/loan.service';
 import { ReviewService } from './review/review.service';
@@ -9,19 +13,24 @@ import { CreateLoanDto } from './loan/dto/create-loan.dto';
 import { CreateReviewDto } from './review/dto/create-review.dto';
 import { BookStatus } from './book/book.entity';
 import { LoanStatus } from './loan/loan.entity';
+import {
+  IUserRepository,
+  USER_REPOSITORY,
+  UserRepresentation,
+} from '../user/repositories/user.repository.interface';
 
 @Injectable()
 export class LibraryService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: IUserRepository,
     private readonly bookService: BookService,
     private readonly loanService: LoanService,
     private readonly reviewService: ReviewService,
   ) {}
 
-  private async ensureUserExists(userId: number): Promise<User> {
-    const user = await this.userRepository.findOneBy({ id: userId });
+  private async ensureUserExists(userId: number): Promise<UserRepresentation> {
+    const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new NotFoundException(`User with ID "${userId}" not found`);
     }
@@ -35,7 +44,7 @@ export class LibraryService {
     const book = await this.bookService.findOne(bookId);
 
     if (book.status !== BookStatus.AVAILABLE) {
-      throw new Error(
+      throw new ConflictException(
         `Book with ID "${bookId}" is currently ${book.status} and cannot be booked.`,
       );
     }
@@ -51,8 +60,8 @@ export class LibraryService {
     const loan = await this.loanService.findLoanWithDetails(loanId);
 
     if (loan.status !== LoanStatus.BOOKED) {
-      throw new Error(
-        `Loan with ID "${loanId}" has invalid status for pickup.`,
+      throw new BadRequestException(
+        `Loan with ID "${loanId}" has status ${loan.status}, cannot be picked up.`,
       );
     }
 
@@ -69,8 +78,8 @@ export class LibraryService {
       loan.status !== LoanStatus.ACTIVE &&
       loan.status !== LoanStatus.OVERDUE
     ) {
-      throw new Error(
-        `Loan with ID "${loanId}" has invalid status for return.`,
+      throw new BadRequestException(
+        `Loan with ID "${loanId}" has status ${loan.status}, cannot be returned.`,
       );
     }
 
@@ -109,8 +118,8 @@ export class LibraryService {
     if (loanId) {
       const loan = await this.loanService.findOne(loanId);
       if (loan.userId !== userId || loan.bookId !== bookId) {
-        throw new Error(
-          `Loan with ID "${loanId}" does not match the provided user and book.`,
+        throw new BadRequestException(
+          `Loan with ID "${loanId}" does not match the provided user "${userId}" and book "${bookId}".`,
         );
       }
     }

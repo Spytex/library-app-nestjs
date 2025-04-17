@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
+import { DrizzleModule } from './db/drizzle.module';
 import { LibraryModule } from './library/library.module';
 import { UserModule } from './user/user.module';
 
@@ -13,6 +14,7 @@ import { UserModule } from './user/user.module';
       envFilePath: '.env',
     }),
     DatabaseModule,
+    DrizzleModule,
     LibraryModule,
     UserModule,
   ],

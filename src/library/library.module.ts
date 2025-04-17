@@ -4,16 +4,10 @@ import { LoanModule } from './loan/loan.module';
 import { ReviewModule } from './review/review.module';
 import { LibraryService } from './library.service';
 import { LibraryController } from './library.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '../user/user.entity';
+import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User]),
-    BookModule,
-    LoanModule,
-    ReviewModule,
-  ],
+  imports: [UserModule, BookModule, LoanModule, ReviewModule],
   controllers: [LibraryController],
   providers: [LibraryService],
   exports: [BookModule, LoanModule, ReviewModule],
