@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { mapToBookDto } from '../../../../common/mappers';
 import { Book, BookStatus } from '../../book.entity';
+import { BookDto } from '../../dto/book.dto';
 import { CreateBookDto } from '../../dto/create-book.dto';
 import { FindBooksQueryDto } from '../../dto/find-books-query.dto';
 import { UpdateBookDto } from '../../dto/update-book.dto';
 import {
-  IBookRepository,
   IBookCountCriteria,
+  IBookRepository,
 } from '../book.repository.interface';
-import { BookDto } from '../../dto/book.dto';
-import { mapBookToDto } from '../../../../common/mappers';
 
 @Injectable()
 export class TypeOrmBookRepository implements IBookRepository {
@@ -22,7 +22,7 @@ export class TypeOrmBookRepository implements IBookRepository {
   async create(createBookDto: CreateBookDto): Promise<BookDto> {
     const newBook = this.bookRepository.create(createBookDto);
     const savedBook = await this.bookRepository.save(newBook);
-    return mapBookToDto(savedBook);
+    return mapToBookDto(savedBook);
   }
 
   async findAll(queryDto: FindBooksQueryDto): Promise<BookDto[]> {
@@ -39,17 +39,17 @@ export class TypeOrmBookRepository implements IBookRepository {
       skip: offset,
       order: { createdAt: 'DESC' },
     });
-    return books.map(mapBookToDto);
+    return books.map(mapToBookDto);
   }
 
   async findById(id: number): Promise<BookDto | null> {
     const book = await this.bookRepository.findOneBy({ id });
-    return book ? mapBookToDto(book) : null;
+    return book ? mapToBookDto(book) : null;
   }
 
   async findByIsbn(isbn: string): Promise<BookDto | null> {
     const book = await this.bookRepository.findOneBy({ isbn });
-    return book ? mapBookToDto(book) : null;
+    return book ? mapToBookDto(book) : null;
   }
 
   async update(
@@ -62,7 +62,7 @@ export class TypeOrmBookRepository implements IBookRepository {
     });
     if (!bookToUpdate) return null;
     const updatedBook = await this.bookRepository.save(bookToUpdate);
-    return mapBookToDto(updatedBook);
+    return mapToBookDto(updatedBook);
   }
 
   async remove(id: number): Promise<boolean> {

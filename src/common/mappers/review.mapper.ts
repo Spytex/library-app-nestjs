@@ -1,41 +1,21 @@
-import { Review } from '../../library/review/review.entity';
-import { ReviewDto } from '../../library/review/dto/review.dto';
-import { mapUserToDto, mapDrizzleUserToDto } from './user.mapper';
-import { mapBookToDto, mapDrizzleBookToDto } from './book.mapper';
+import { plainToInstance } from 'class-transformer';
 import {
   BookSelect,
   ReviewSelect,
   UserSelect,
-} from 'src/database/drizzle/schema';
+} from '../../database/drizzle/schema';
+import { ReviewDto } from '../../library/review/dto/review.dto';
+import { Review } from '../../library/review/review.entity';
 
-export function mapReviewToDto(review: Review): ReviewDto {
-  return {
-    id: review.id,
-    userId: review.userId,
-    bookId: review.bookId,
-    loanId: review.loanId,
-    rating: review.rating,
-    comment: review.comment,
-    createdAt: review.createdAt,
-    updatedAt: review.updatedAt,
-    user: review.user ? mapUserToDto(review.user) : undefined,
-    book: review.book ? mapBookToDto(review.book) : undefined,
-  };
-}
+type ReviewSource =
+  | Review
+  | (ReviewSelect & { user?: UserSelect; book?: BookSelect });
 
-export function mapDrizzleReviewToDto(
-  review: ReviewSelect & { user?: UserSelect; book?: BookSelect },
-): ReviewDto {
-  return {
-    id: review.id,
-    userId: review.userId,
-    bookId: review.bookId,
-    loanId: review.loanId ?? null,
-    rating: review.rating,
-    comment: review.comment ?? null,
-    createdAt: review.createdAt,
-    updatedAt: review.updatedAt,
-    user: review.user ? mapDrizzleUserToDto(review.user) : undefined,
-    book: review.book ? mapDrizzleBookToDto(review.book) : undefined,
-  };
+export function mapToReviewDto<T extends ReviewSource | ReviewSource[]>(
+  source: T,
+): T extends ReviewSource[] ? ReviewDto[] : ReviewDto {
+  return plainToInstance(ReviewDto, source, {
+    excludeExtraneousValues: true,
+    enableImplicitConversion: true,
+  }) as T extends ReviewSource[] ? ReviewDto[] : ReviewDto;
 }

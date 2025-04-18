@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, count as drizzleCount, lt, SQL } from 'drizzle-orm';
-import { LoanStatus } from '../../loan.entity';
-import { CreateLoanDto } from '../../dto/create-loan.dto';
-import {
-  ILoanRepository,
-  ILoanCountCriteria,
-} from '../loan.repository.interface';
-import { LoanDto } from '../../dto/loan.dto';
-import { mapDrizzleLoanToDto } from '../../../../common/mappers';
+import { and, count as drizzleCount, eq, lt, SQL } from 'drizzle-orm';
 import { DRIZZLE_CLIENT, DrizzleDB } from 'src/database/drizzle/drizzle.module';
 import * as schema from 'src/database/drizzle/schema';
+import { mapToLoanDto } from '../../../../common/mappers';
+import { CreateLoanDto } from '../../dto/create-loan.dto';
+import { LoanDto } from '../../dto/loan.dto';
+import { LoanStatus } from '../../loan.entity';
+import {
+  ILoanCountCriteria,
+  ILoanRepository,
+} from '../loan.repository.interface';
 
 @Injectable()
 export class DrizzleLoanRepository implements ILoanRepository {
@@ -26,7 +26,7 @@ export class DrizzleLoanRepository implements ILoanRepository {
       .insert(schema.loans)
       .values({ ...createLoanDto, status, bookingDate, loanDate, dueDate })
       .returning();
-    return mapDrizzleLoanToDto(result[0]);
+    return mapToLoanDto(result[0]);
   }
 
   async findById(id: number): Promise<LoanDto | null> {
@@ -35,7 +35,7 @@ export class DrizzleLoanRepository implements ILoanRepository {
       .from(schema.loans)
       .where(eq(schema.loans.id, id))
       .limit(1);
-    return result.length > 0 ? mapDrizzleLoanToDto(result[0]) : null;
+    return result.length > 0 ? mapToLoanDto(result[0]) : null;
   }
 
   async findByIdWithRelations(
@@ -50,7 +50,7 @@ export class DrizzleLoanRepository implements ILoanRepository {
       },
     });
     const result = await query;
-    return result ? mapDrizzleLoanToDto(result) : null;
+    return result ? mapToLoanDto(result) : null;
   }
 
   async findUserLoans(userId: number): Promise<LoanDto[]> {
@@ -59,7 +59,7 @@ export class DrizzleLoanRepository implements ILoanRepository {
       orderBy: (loans, { desc }) => [desc(loans.createdAt)],
       with: { book: true },
     });
-    return loans.map(mapDrizzleLoanToDto);
+    return loans.map(mapToLoanDto);
   }
 
   async findBookLoans(bookId: number): Promise<LoanDto[]> {
@@ -68,7 +68,7 @@ export class DrizzleLoanRepository implements ILoanRepository {
       orderBy: (loans, { desc }) => [desc(loans.createdAt)],
       with: { user: true },
     });
-    return loans.map(mapDrizzleLoanToDto);
+    return loans.map(mapToLoanDto);
   }
 
   async update(id: number, data: Partial<LoanDto>): Promise<LoanDto | null> {
@@ -78,7 +78,7 @@ export class DrizzleLoanRepository implements ILoanRepository {
       .set({ ...loanData, updatedAt: new Date() })
       .where(eq(schema.loans.id, id))
       .returning();
-    return result.length > 0 ? mapDrizzleLoanToDto(result[0]) : null;
+    return result.length > 0 ? mapToLoanDto(result[0]) : null;
   }
 
   async remove(id: number): Promise<boolean> {

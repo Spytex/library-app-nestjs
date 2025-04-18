@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
-import { Review } from '../../review.entity';
+import { mapToReviewDto } from '../../../../common/mappers';
 import { CreateReviewDto } from '../../dto/create-review.dto';
-import {
-  IReviewRepository,
-  IReviewCountCriteria,
-} from '../review.repository.interface';
 import { ReviewDto } from '../../dto/review.dto';
-import { mapReviewToDto } from '../../../../common/mappers';
+import { Review } from '../../review.entity';
+import {
+  IReviewCountCriteria,
+  IReviewRepository,
+} from '../review.repository.interface';
 
 @Injectable()
 export class TypeOrmReviewRepository implements IReviewRepository {
@@ -20,7 +20,7 @@ export class TypeOrmReviewRepository implements IReviewRepository {
   async create(createReviewDto: CreateReviewDto): Promise<ReviewDto> {
     const newReview = this.reviewRepository.create(createReviewDto);
     const savedReview = await this.reviewRepository.save(newReview);
-    return mapReviewToDto(savedReview);
+    return mapToReviewDto(savedReview);
   }
 
   async findById(id: number): Promise<ReviewDto | null> {
@@ -28,7 +28,7 @@ export class TypeOrmReviewRepository implements IReviewRepository {
       where: { id },
       relations: ['user', 'book'],
     });
-    return review ? mapReviewToDto(review) : null;
+    return review ? mapToReviewDto(review) : null;
   }
 
   async findUserReviewForBook(
@@ -39,7 +39,7 @@ export class TypeOrmReviewRepository implements IReviewRepository {
       where: { userId, bookId },
       relations: ['user', 'book'],
     });
-    return review ? mapReviewToDto(review) : null;
+    return review ? mapToReviewDto(review) : null;
   }
 
   async findBookReviews(
@@ -54,7 +54,7 @@ export class TypeOrmReviewRepository implements IReviewRepository {
       order: { createdAt: 'DESC' },
       relations: ['user'],
     });
-    return reviews.map(mapReviewToDto);
+    return reviews.map(mapToReviewDto);
   }
 
   async findUserReviews(
@@ -69,7 +69,7 @@ export class TypeOrmReviewRepository implements IReviewRepository {
       order: { createdAt: 'DESC' },
       relations: ['book'],
     });
-    return reviews.map(mapReviewToDto);
+    return reviews.map(mapToReviewDto);
   }
 
   async remove(id: number): Promise<boolean> {

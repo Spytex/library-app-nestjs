@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, LessThan, Repository } from 'typeorm';
-import { Loan, LoanStatus } from '../../loan.entity';
+import { mapToLoanDto } from '../../../../common/mappers';
 import { CreateLoanDto } from '../../dto/create-loan.dto';
-import {
-  ILoanRepository,
-  ILoanCountCriteria,
-} from '../loan.repository.interface';
 import { LoanDto } from '../../dto/loan.dto';
-import { mapLoanToDto } from '../../../../common/mappers';
+import { Loan, LoanStatus } from '../../loan.entity';
+import {
+  ILoanCountCriteria,
+  ILoanRepository,
+} from '../loan.repository.interface';
 
 @Injectable()
 export class TypeOrmLoanRepository implements ILoanRepository {
@@ -32,12 +32,12 @@ export class TypeOrmLoanRepository implements ILoanRepository {
       dueDate,
     });
     const savedLoan = await this.loanRepository.save(newLoan);
-    return mapLoanToDto(savedLoan);
+    return mapToLoanDto(savedLoan);
   }
 
   async findById(id: number): Promise<LoanDto | null> {
     const loan = await this.loanRepository.findOneBy({ id });
-    return loan ? mapLoanToDto(loan) : null;
+    return loan ? mapToLoanDto(loan) : null;
   }
 
   async findByIdWithRelations(
@@ -48,7 +48,7 @@ export class TypeOrmLoanRepository implements ILoanRepository {
       where: { id },
       relations,
     });
-    return loan ? mapLoanToDto(loan) : null;
+    return loan ? mapToLoanDto(loan) : null;
   }
 
   async findUserLoans(userId: number): Promise<LoanDto[]> {
@@ -57,7 +57,7 @@ export class TypeOrmLoanRepository implements ILoanRepository {
       order: { createdAt: 'DESC' },
       relations: ['book'],
     });
-    return loans.map(mapLoanToDto);
+    return loans.map(mapToLoanDto);
   }
 
   async findBookLoans(bookId: number): Promise<LoanDto[]> {
@@ -66,7 +66,7 @@ export class TypeOrmLoanRepository implements ILoanRepository {
       order: { createdAt: 'DESC' },
       relations: ['user'],
     });
-    return loans.map(mapLoanToDto);
+    return loans.map(mapToLoanDto);
   }
 
   async update(id: number, data: Partial<LoanDto>): Promise<LoanDto | null> {
@@ -74,7 +74,7 @@ export class TypeOrmLoanRepository implements ILoanRepository {
     const loanToUpdate = await this.loanRepository.preload({ id, ...loanData });
     if (!loanToUpdate) return null;
     const updatedLoan = await this.loanRepository.save(loanToUpdate);
-    return mapLoanToDto(updatedLoan);
+    return mapToLoanDto(updatedLoan);
   }
 
   async remove(id: number): Promise<boolean> {

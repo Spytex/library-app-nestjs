@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../../user.entity';
+import { mapToUserDto } from '../../../common/mappers';
 import { CreateUserDto } from '../../dto/create-user.dto';
 import { UpdateUserDto } from '../../dto/update-user.dto';
-import { IUserRepository } from '../user.repository.interface';
 import { UserDto } from '../../dto/user.dto';
-import { mapUserToDto } from '../../../common/mappers';
+import { User } from '../../user.entity';
+import { IUserRepository } from '../user.repository.interface';
 
 @Injectable()
 export class TypeOrmUserRepository implements IUserRepository {
@@ -18,22 +18,22 @@ export class TypeOrmUserRepository implements IUserRepository {
   async create(createUserDto: CreateUserDto): Promise<UserDto> {
     const newUser = this.userRepository.create(createUserDto);
     const savedUser = await this.userRepository.save(newUser);
-    return mapUserToDto(savedUser);
+    return mapToUserDto(savedUser);
   }
 
   async findAll(): Promise<UserDto[]> {
     const users = await this.userRepository.find();
-    return users.map(mapUserToDto);
+    return users.map(mapToUserDto);
   }
 
   async findById(id: number): Promise<UserDto | null> {
     const user = await this.userRepository.findOneBy({ id });
-    return user ? mapUserToDto(user) : null;
+    return user ? mapToUserDto(user) : null;
   }
 
   async findByEmail(email: string): Promise<UserDto | null> {
     const user = await this.userRepository.findOneBy({ email });
-    return user ? mapUserToDto(user) : null;
+    return user ? mapToUserDto(user) : null;
   }
 
   async update(
@@ -48,7 +48,7 @@ export class TypeOrmUserRepository implements IUserRepository {
       return null;
     }
     const updatedUser = await this.userRepository.save(userToUpdate);
-    return mapUserToDto(updatedUser);
+    return mapToUserDto(updatedUser);
   }
 
   async remove(id: number): Promise<boolean> {

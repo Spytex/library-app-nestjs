@@ -1,21 +1,21 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   and,
-  eq,
   count as drizzleCount,
+  eq,
   isNotNull,
   isNull,
   SQL,
 } from 'drizzle-orm';
-import { CreateReviewDto } from '../../dto/create-review.dto';
-import {
-  IReviewRepository,
-  IReviewCountCriteria,
-} from '../review.repository.interface';
-import { ReviewDto } from '../../dto/review.dto';
-import { mapDrizzleReviewToDto } from '../../../../common/mappers';
 import { DRIZZLE_CLIENT, DrizzleDB } from 'src/database/drizzle/drizzle.module';
 import * as schema from 'src/database/drizzle/schema';
+import { mapToReviewDto } from '../../../../common/mappers';
+import { CreateReviewDto } from '../../dto/create-review.dto';
+import { ReviewDto } from '../../dto/review.dto';
+import {
+  IReviewCountCriteria,
+  IReviewRepository,
+} from '../review.repository.interface';
 
 @Injectable()
 export class DrizzleReviewRepository implements IReviewRepository {
@@ -26,7 +26,7 @@ export class DrizzleReviewRepository implements IReviewRepository {
       .insert(schema.reviews)
       .values(createReviewDto)
       .returning();
-    return mapDrizzleReviewToDto(result[0]);
+    return mapToReviewDto(result[0]);
   }
 
   async findById(id: number): Promise<ReviewDto | null> {
@@ -34,7 +34,7 @@ export class DrizzleReviewRepository implements IReviewRepository {
       where: eq(schema.reviews.id, id),
       with: { user: true, book: true },
     });
-    return result ? mapDrizzleReviewToDto(result) : null;
+    return result ? mapToReviewDto(result) : null;
   }
 
   async findUserReviewForBook(
@@ -48,7 +48,7 @@ export class DrizzleReviewRepository implements IReviewRepository {
       ),
       with: { user: true, book: true },
     });
-    return result ? mapDrizzleReviewToDto(result) : null;
+    return result ? mapToReviewDto(result) : null;
   }
 
   async findBookReviews(
@@ -63,7 +63,7 @@ export class DrizzleReviewRepository implements IReviewRepository {
       orderBy: (reviews, { desc }) => [desc(reviews.createdAt)],
       with: { user: true },
     });
-    return reviews.map(mapDrizzleReviewToDto);
+    return reviews.map(mapToReviewDto);
   }
 
   async findUserReviews(
@@ -78,7 +78,7 @@ export class DrizzleReviewRepository implements IReviewRepository {
       orderBy: (reviews, { desc }) => [desc(reviews.createdAt)],
       with: { book: true },
     });
-    return reviews.map(mapDrizzleReviewToDto);
+    return reviews.map(mapToReviewDto);
   }
 
   async remove(id: number): Promise<boolean> {

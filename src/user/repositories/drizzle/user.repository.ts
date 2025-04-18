@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { CreateUserDto } from '../../dto/create-user.dto';
-import { UpdateUserDto } from '../../dto/update-user.dto';
-import { IUserRepository } from '../user.repository.interface';
-import { UserDto } from '../../dto/user.dto';
-import { mapDrizzleUserToDto } from '../../../common/mappers';
 import { DRIZZLE_CLIENT, DrizzleDB } from 'src/database/drizzle/drizzle.module';
 import * as schema from 'src/database/drizzle/schema';
+import { mapToUserDto } from '../../../common/mappers';
+import { CreateUserDto } from '../../dto/create-user.dto';
+import { UpdateUserDto } from '../../dto/update-user.dto';
+import { UserDto } from '../../dto/user.dto';
+import { IUserRepository } from '../user.repository.interface';
 
 @Injectable()
 export class DrizzleUserRepository implements IUserRepository {
@@ -17,12 +17,12 @@ export class DrizzleUserRepository implements IUserRepository {
       .insert(schema.users)
       .values(createUserDto)
       .returning();
-    return mapDrizzleUserToDto(result[0]);
+    return mapToUserDto(result[0]);
   }
 
   async findAll(): Promise<UserDto[]> {
     const users = await this.db.select().from(schema.users);
-    return users.map(mapDrizzleUserToDto);
+    return users.map(mapToUserDto);
   }
 
   async findById(id: number): Promise<UserDto | null> {
@@ -31,7 +31,7 @@ export class DrizzleUserRepository implements IUserRepository {
       .from(schema.users)
       .where(eq(schema.users.id, id))
       .limit(1);
-    return result.length > 0 ? mapDrizzleUserToDto(result[0]) : null;
+    return result.length > 0 ? mapToUserDto(result[0]) : null;
   }
 
   async findByEmail(email: string): Promise<UserDto | null> {
@@ -40,7 +40,7 @@ export class DrizzleUserRepository implements IUserRepository {
       .from(schema.users)
       .where(eq(schema.users.email, email))
       .limit(1);
-    return result.length > 0 ? mapDrizzleUserToDto(result[0]) : null;
+    return result.length > 0 ? mapToUserDto(result[0]) : null;
   }
 
   async update(
@@ -52,7 +52,7 @@ export class DrizzleUserRepository implements IUserRepository {
       .set({ ...updateUserDto, updatedAt: new Date() })
       .where(eq(schema.users.id, id))
       .returning();
-    return result.length > 0 ? mapDrizzleUserToDto(result[0]) : null;
+    return result.length > 0 ? mapToUserDto(result[0]) : null;
   }
 
   async remove(id: number): Promise<boolean> {

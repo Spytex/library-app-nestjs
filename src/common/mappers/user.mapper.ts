@@ -1,23 +1,15 @@
-import { User } from '../../user/user.entity';
+import { plainToInstance } from 'class-transformer';
+import { UserSelect } from '../../database/drizzle/schema';
 import { UserDto } from '../../user/dto/user.dto';
-import { UserSelect } from 'src/database/drizzle/schema';
+import { User } from '../../user/user.entity';
 
-export function mapUserToDto(user: User): UserDto {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-  };
-}
+type UserSource = User | UserSelect;
 
-export function mapDrizzleUserToDto(user: UserSelect): UserDto {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-  };
+export function mapToUserDto<T extends UserSource | UserSource[]>(
+  source: T,
+): T extends UserSource[] ? UserDto[] : UserDto {
+  return plainToInstance(UserDto, source, {
+    excludeExtraneousValues: true,
+    enableImplicitConversion: true,
+  }) as T extends UserSource[] ? UserDto[] : UserDto;
 }
