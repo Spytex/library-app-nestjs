@@ -19,7 +19,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "drizzle:generate": "drizzle-kit generate",
-    "drizzle:migrate": "node -r ts-node/register src/db/migrate.ts",
+    "drizzle:migrate": "node -r ts-node/register src/database/drizzle/migrate.ts",
     "drizzle:studio": "drizzle-kit studio",
     "typeorm": "typeorm-ts-node-commonjs -d ./data-source.ts",
     "typeorm:generate": "npm run typeorm -- migration:generate ./typeorm/migration",

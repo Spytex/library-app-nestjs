@@ -6,7 +6,7 @@ if (!DB_HOST || !DB_PORT || !DB_USERNAME || !DB_PASSWORD || !DB_DATABASE) {
   throw new Error('Database environment variables are not set.');
 }
 export default defineConfig({
-  schema: './src/db/schema.ts',
+  schema: './src/database/drizzle/schema.ts',
   out: './drizzle/migrations',
   dialect: 'postgresql',
   dbCredentials: {
