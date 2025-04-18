@@ -22,7 +22,7 @@
     "drizzle:migrate": "node -r ts-node/register src/database/drizzle/migrate.ts",
     "drizzle:studio": "drizzle-kit studio",
     "typeorm": "typeorm-ts-node-commonjs -d ./data-source.ts",
-    "typeorm:generate": "npm run typeorm -- migration:generate ./typeorm/migration",
+    "typeorm:generate": "npm run typeorm -- migration:generate ./typeorm/migrations/migration",
     "typeorm:run": "npm run build && npm run typeorm -- migration:run",
     "typeorm:revert": "npm run typeorm -- migration:revert"
   },
