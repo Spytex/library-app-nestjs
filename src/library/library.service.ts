@@ -20,23 +20,22 @@ import {
 import { UserDto } from '../user/dto/user.dto';
 import { LoanDto } from './loan/dto/loan.dto';
 import { ReviewDto } from './review/dto/review.dto';
+import { FindLoansQueryDto } from './loan/dto/find-loans-query.dto';
+import { FindReviewsQueryDto } from './review/dto/find-reviews-query.dto';
+import { IPaginatedResult } from '../common/utils/pagination.utils';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class LibraryService {
   constructor(
-    @Inject(USER_REPOSITORY)
-    private readonly userRepository: IUserRepository,
+    private readonly userService: UserService,
     private readonly bookService: BookService,
     private readonly loanService: LoanService,
     private readonly reviewService: ReviewService,
   ) {}
 
   private async ensureUserExists(userId: number): Promise<UserDto> {
-    const user = await this.userRepository.findById(userId);
-    if (!user) {
-      throw new NotFoundException(`User with ID "${userId}" not found`);
-    }
-    return user;
+    return this.userService.findOne(userId);
   }
 
   async createBooking(createLoanDto: CreateLoanDto): Promise<LoanDto> {
@@ -58,7 +57,7 @@ export class LibraryService {
   }
 
   async pickupLoan(loanId: number): Promise<LoanDto> {
-    const loan = await this.loanService.findLoanWithDetails(loanId);
+    const loan = await this.loanService.findOne(loanId);
 
     if (loan.status !== LoanStatus.BOOKED) {
       throw new BadRequestException(
@@ -73,52 +72,60 @@ export class LibraryService {
   }
 
   async returnLoan(loanId: number): Promise<LoanDto> {
-    const loan = await this.loanService.findLoanWithDetails(loanId);
+    const loan = await this.loanService.findOne(loanId);
 
-    const isOverdue = loan.dueDate && loan.dueDate < new Date();
+    const isOverdue = loan.dueDate && new Date() > loan.dueDate;
     const currentStatus = isOverdue ? LoanStatus.OVERDUE : loan.status;
 
     if (
-      currentStatus !== LoanStatus.ACTIVE &&
-      currentStatus !== LoanStatus.OVERDUE
+      loan.status !== LoanStatus.ACTIVE &&
+      loan.status !== LoanStatus.OVERDUE
     ) {
       throw new BadRequestException(
-        `Loan with ID "${loanId}" has status ${currentStatus}, cannot be returned.`,
+        `Loan with ID "${loanId}" has status ${loan.status}, cannot be returned.`,
       );
     }
 
     const updatedLoan = await this.loanService.returnLoan(loanId);
     await this.bookService.updateStatus(loan.bookId, BookStatus.AVAILABLE);
 
+    if (isOverdue && updatedLoan.status === LoanStatus.RETURNED) {
+      console.warn(`Loan ${loanId} returned overdue.`);
+    }
+
     return updatedLoan;
   }
 
-  async getUserLoans(userId: number): Promise<LoanDto[]> {
+  async getUserLoans(
+    userId: number,
+    query: FindLoansQueryDto,
+  ): Promise<IPaginatedResult<LoanDto>> {
     await this.ensureUserExists(userId);
-    return this.loanService.findUserLoans(userId);
+    return this.loanService.findUserLoans(userId, query);
   }
 
   async getUserReviews(
     userId: number,
-    limit = 10,
-    offset = 0,
-  ): Promise<ReviewDto[]> {
+    query: FindReviewsQueryDto,
+  ): Promise<IPaginatedResult<ReviewDto>> {
     await this.ensureUserExists(userId);
-    return this.reviewService.findUserReviews(userId, limit, offset);
+    return this.reviewService.findUserReviews(userId, query);
   }
 
-  async getBookLoans(bookId: number): Promise<LoanDto[]> {
+  async getBookLoans(
+    bookId: number,
+    query: FindLoansQueryDto,
+  ): Promise<IPaginatedResult<LoanDto>> {
     await this.bookService.findOne(bookId);
-    return this.loanService.findBookLoans(bookId);
+    return this.loanService.findBookLoans(bookId, query);
   }
 
   async getBookReviews(
     bookId: number,
-    limit = 10,
-    offset = 0,
-  ): Promise<ReviewDto[]> {
+    query: FindReviewsQueryDto,
+  ): Promise<IPaginatedResult<ReviewDto>> {
     await this.bookService.findOne(bookId);
-    return this.reviewService.findBookReviews(bookId, limit, offset);
+    return this.reviewService.findBookReviews(bookId, query);
   }
 
   async createReview(createReviewDto: CreateReviewDto): Promise<ReviewDto> {
@@ -132,6 +139,23 @@ export class LibraryService {
       if (loan.userId !== userId || loan.bookId !== bookId) {
         throw new BadRequestException(
           `Loan with ID "${loanId}" does not match the provided user "${userId}" and book "${bookId}".`,
+        );
+      }
+      if (loan.status !== LoanStatus.RETURNED) {
+        throw new BadRequestException(
+          `Cannot review book for loan ID "${loanId}" as it is not yet returned (status: ${loan.status}).`,
+        );
+      }
+    } else {
+      const userLoansForBook = await this.loanService.findAll({
+        userId,
+        bookId,
+        status: LoanStatus.RETURNED,
+        limit: 1,
+      });
+      if (userLoansForBook.meta.pagination.totalItems === 0) {
+        throw new BadRequestException(
+          `User "${userId}" has not previously borrowed book "${bookId}" and cannot review it without a specific loan ID.`,
         );
       }
     }

@@ -11,6 +11,11 @@ import {
   USER_REPOSITORY,
 } from './repositories/user.repository.interface';
 import { UserDto } from './dto/user.dto';
+import { FindUsersQueryDto } from './dto/find-users-query.dto';
+import {
+  IPaginatedResult,
+  createPaginatedResponse,
+} from '../common/utils/pagination.utils';
 
 @Injectable()
 export class UserService {
@@ -31,8 +36,11 @@ export class UserService {
     return this.userRepository.create(createUserDto);
   }
 
-  async findAll(): Promise<UserDto[]> {
-    return this.userRepository.findAll();
+  async findAll(query: FindUsersQueryDto): Promise<IPaginatedResult<UserDto>> {
+    const { page = 1, limit = 10, ...filters } = query;
+    const items = await this.userRepository.findAll(query);
+    const totalItems = await this.userRepository.count(filters);
+    return createPaginatedResponse<UserDto>(items, totalItems, page, limit);
   }
 
   async findOne(id: number): Promise<UserDto> {
@@ -78,10 +86,6 @@ export class UserService {
   }
 
   async ensureUserExists(userId: number): Promise<UserDto> {
-    const user = await this.userRepository.findById(userId);
-    if (!user) {
-      throw new NotFoundException(`User with ID "${userId}" not found`);
-    }
-    return user;
+    return this.findOne(userId);
   }
 }

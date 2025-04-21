@@ -9,11 +9,12 @@ import {
   Patch,
   Post,
   Query,
-  DefaultValuePipe,
 } from '@nestjs/common';
 import { LibraryService } from './library.service';
 import { CreateLoanDto } from './loan/dto/create-loan.dto';
 import { CreateReviewDto } from './review/dto/create-review.dto';
+import { FindLoansQueryDto } from './loan/dto/find-loans-query.dto';
+import { FindReviewsQueryDto } from './review/dto/find-reviews-query.dto';
 
 @Controller('library')
 export class LibraryController {
@@ -36,31 +37,39 @@ export class LibraryController {
   }
 
   @Get('users/:userId/loans')
-  getUserLoans(@Param('userId', ParseIntPipe) userId: number) {
-    return this.libraryService.getUserLoans(userId);
+  getUserLoans(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query() query: FindLoansQueryDto,
+  ) {
+    const { userId: _, ...restQuery } = query;
+    return this.libraryService.getUserLoans(userId, restQuery);
   }
 
   @Get('users/:userId/reviews')
   getUserReviews(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query() query: FindReviewsQueryDto,
   ) {
-    return this.libraryService.getUserReviews(userId, limit, offset);
+    const { userId: _, ...restQuery } = query;
+    return this.libraryService.getUserReviews(userId, restQuery);
   }
 
   @Get('books/:bookId/loans')
-  getBookLoans(@Param('bookId', ParseIntPipe) bookId: number) {
-    return this.libraryService.getBookLoans(bookId);
+  getBookLoans(
+    @Param('bookId', ParseIntPipe) bookId: number,
+    @Query() query: FindLoansQueryDto,
+  ) {
+    const { bookId: _, ...restQuery } = query;
+    return this.libraryService.getBookLoans(bookId, restQuery);
   }
 
   @Get('books/:bookId/reviews')
   getBookReviews(
     @Param('bookId', ParseIntPipe) bookId: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query() query: FindReviewsQueryDto,
   ) {
-    return this.libraryService.getBookReviews(bookId, limit, offset);
+    const { bookId: _, ...restQuery } = query;
+    return this.libraryService.getBookReviews(bookId, restQuery);
   }
 
   @Post('reviews')

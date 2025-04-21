@@ -8,9 +8,11 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { LoanService } from './loan.service';
 import { CreateLoanDto } from './dto/create-loan.dto';
+import { FindLoansQueryDto } from './dto/find-loans-query.dto';
 
 @Controller()
 export class LoanController {
@@ -20,6 +22,11 @@ export class LoanController {
   @HttpCode(HttpStatus.CREATED)
   createBooking(@Body() createLoanDto: CreateLoanDto) {
     return this.loanService.createBooking(createLoanDto);
+  }
+
+  @Get('loans')
+  findAll(@Query() query: FindLoansQueryDto) {
+    return this.loanService.findAll(query);
   }
 
   @Get('loans/:id')
@@ -43,12 +50,20 @@ export class LoanController {
   }
 
   @Get('users/:userId/loans')
-  findUserLoans(@Param('userId', ParseIntPipe) userId: number) {
-    return this.loanService.findUserLoans(userId);
+  findUserLoans(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query() query: FindLoansQueryDto,
+  ) {
+    const { userId: _, ...restQuery } = query;
+    return this.loanService.findUserLoans(userId, restQuery);
   }
 
   @Get('books/:bookId/loans')
-  findBookLoans(@Param('bookId', ParseIntPipe) bookId: number) {
-    return this.loanService.findBookLoans(bookId);
+  findBookLoans(
+    @Param('bookId', ParseIntPipe) bookId: number,
+    @Query() query: FindLoansQueryDto,
+  ) {
+    const { bookId: _, ...restQuery } = query;
+    return this.loanService.findBookLoans(bookId, restQuery);
   }
 }

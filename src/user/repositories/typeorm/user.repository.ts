@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 import { mapToUserDto } from '../../../common/mappers';
 import { CreateUserDto } from '../../dto/create-user.dto';
+import { FindUsersQueryDto } from '../../dto/find-users-query.dto';
 import { UpdateUserDto } from '../../dto/update-user.dto';
 import { UserDto } from '../../dto/user.dto';
 import { User } from '../../user.entity';
-import { IUserRepository } from '../user.repository.interface';
+import {
+  IUserFilterCriteria,
+  IUserRepository,
+} from '../user.repository.interface';
 
 @Injectable()
 export class TypeOrmUserRepository implements IUserRepository {
@@ -21,8 +25,20 @@ export class TypeOrmUserRepository implements IUserRepository {
     return mapToUserDto(savedUser);
   }
 
-  async findAll(): Promise<UserDto[]> {
-    const users = await this.userRepository.find();
+  async findAll(query: FindUsersQueryDto): Promise<UserDto[]> {
+    const { limit = 10, page = 1, name, email } = query;
+    const offset = (page - 1) * limit;
+    const where: FindOptionsWhere<User> = {};
+
+    if (name) where.name = ILike(`%${name}%`);
+    if (email) where.email = ILike(`%${email}%`);
+
+    const users = await this.userRepository.find({
+      where,
+      take: limit,
+      skip: offset,
+      order: { createdAt: 'DESC' },
+    });
     return users.map(mapToUserDto);
   }
 
@@ -58,5 +74,12 @@ export class TypeOrmUserRepository implements IUserRepository {
       result.affected !== null &&
       result.affected > 0
     );
+  }
+
+  async count(criteria?: IUserFilterCriteria): Promise<number> {
+    const where: FindOptionsWhere<User> = {};
+    if (criteria?.name) where.name = ILike(`%${criteria.name}%`);
+    if (criteria?.email) where.email = ILike(`%${criteria.email}%`);
+    return this.userRepository.count({ where });
   }
 }

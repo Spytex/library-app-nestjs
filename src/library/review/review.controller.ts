@@ -9,37 +9,46 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
-  DefaultValuePipe,
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { FindReviewsQueryDto } from './dto/find-reviews-query.dto';
 
-@Controller()
+@Controller() // Base path can be defined in LibraryController or here if needed
 export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
+  // This endpoint might be redundant if LibraryController handles review creation
   @Post('reviews')
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createReviewDto: CreateReviewDto) {
     return this.reviewService.create(createReviewDto);
   }
 
+  @Get('reviews') // General endpoint to find all reviews with filters
+  findAll(@Query() query: FindReviewsQueryDto) {
+    return this.reviewService.findAll(query);
+  }
+
+  // Specific endpoints remain useful for clarity
   @Get('books/:bookId/reviews')
   findBookReviews(
     @Param('bookId', ParseIntPipe) bookId: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query() query: FindReviewsQueryDto,
   ) {
-    return this.reviewService.findBookReviews(bookId, limit, offset);
+    // Remove bookId from query DTO if present to avoid conflict
+    const { bookId: _, ...restQuery } = query;
+    return this.reviewService.findBookReviews(bookId, restQuery);
   }
 
   @Get('users/:userId/reviews')
   findUserReviews(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query() query: FindReviewsQueryDto,
   ) {
-    return this.reviewService.findUserReviews(userId, limit, offset);
+    // Remove userId from query DTO if present to avoid conflict
+    const { userId: _, ...restQuery } = query;
+    return this.reviewService.findUserReviews(userId, restQuery);
   }
 
   @Get('reviews/:id')

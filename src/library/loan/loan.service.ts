@@ -11,6 +11,11 @@ import {
   LOAN_REPOSITORY,
 } from './repositories/loan.repository.interface';
 import { LoanDto } from './dto/loan.dto';
+import { FindLoansQueryDto } from './dto/find-loans-query.dto';
+import {
+  IPaginatedResult,
+  createPaginatedResponse,
+} from '../../common/utils/pagination.utils';
 
 @Injectable()
 export class LoanService {
@@ -68,7 +73,12 @@ export class LoanService {
 
     if (!loan.dueDate) {
       throw new BadRequestException(
-        `Loan with ID "${loanId}" has no due date set.`,
+        `Loan with ID "${loanId}" has no due date set, cannot extend.`,
+      );
+    }
+    if (loan.status !== LoanStatus.ACTIVE) {
+      throw new BadRequestException(
+        `Loan with ID "${loanId}" has status ${loan.status}, cannot be extended.`,
       );
     }
 
@@ -84,18 +94,17 @@ export class LoanService {
     return updatedLoan;
   }
 
-  async findOne(id: number): Promise<LoanDto> {
-    const loan = await this.loanRepository.findById(id);
-    if (!loan) {
-      throw new NotFoundException(`Loan with ID "${id}" not found`);
-    }
-    return loan;
+  async findAll(query: FindLoansQueryDto): Promise<IPaginatedResult<LoanDto>> {
+    const { page = 1, limit = 10, ...filters } = query;
+    const items = await this.loanRepository.findAll(query);
+    const totalItems = await this.loanRepository.count(filters);
+    return createPaginatedResponse<LoanDto>(items, totalItems, page, limit);
   }
 
-  async findLoanWithDetails(id: number): Promise<LoanDto> {
+  async findOne(id: number): Promise<LoanDto> {
     const loan = await this.loanRepository.findByIdWithRelations(id, [
-      'book',
       'user',
+      'book',
     ]);
     if (!loan) {
       throw new NotFoundException(`Loan with ID "${id}" not found`);
@@ -103,12 +112,24 @@ export class LoanService {
     return loan;
   }
 
-  async findUserLoans(userId: number): Promise<LoanDto[]> {
-    return this.loanRepository.findUserLoans(userId);
+  async findUserLoans(
+    userId: number,
+    query: FindLoansQueryDto,
+  ): Promise<IPaginatedResult<LoanDto>> {
+    query.userId = userId;
+    return this.findAll(query);
   }
 
-  async findBookLoans(bookId: number): Promise<LoanDto[]> {
-    return this.loanRepository.findBookLoans(bookId);
+  async findBookLoans(
+    bookId: number,
+    query: FindLoansQueryDto,
+  ): Promise<IPaginatedResult<LoanDto>> {
+    query.bookId = bookId;
+    return this.findAll(query);
+  }
+
+  async findLoanWithDetails(id: number): Promise<LoanDto> {
+    return this.findOne(id);
   }
 
   private calculateDueDate(startDate: Date): Date {
