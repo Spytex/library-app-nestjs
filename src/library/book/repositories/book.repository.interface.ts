@@ -1,8 +1,8 @@
+import { BookStatus } from '../book.entity';
+import { BookDto } from '../dto/book.dto';
 import { CreateBookDto } from '../dto/create-book.dto';
 import { FindBooksQueryDto } from '../dto/find-books-query.dto';
 import { UpdateBookDto } from '../dto/update-book.dto';
-import { BookStatus } from '../book.entity';
-import { BookDto } from '../dto/book.dto';
 
 export interface IBookCountCriteria {
   status?: BookStatus;

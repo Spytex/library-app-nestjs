@@ -26,8 +26,10 @@ export class DrizzleBookRepository implements IBookRepository {
   }
 
   async findAll(queryDto: FindBooksQueryDto): Promise<BookDto[]> {
-    const { limit = 10, offset = 0, title, author, status } = queryDto;
+    const { limit = 10, page = 1, title, author, status } = queryDto;
+    const offset = (page - 1) * limit;
     const conditions: SQL[] = [];
+
     if (status) conditions.push(eq(schema.books.status, status));
     if (title) conditions.push(ilike(schema.books.title, `%${title}%`));
     if (author) conditions.push(ilike(schema.books.author, `%${author}%`));

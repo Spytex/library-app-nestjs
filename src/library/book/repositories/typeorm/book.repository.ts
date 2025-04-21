@@ -26,7 +26,8 @@ export class TypeOrmBookRepository implements IBookRepository {
   }
 
   async findAll(queryDto: FindBooksQueryDto): Promise<BookDto[]> {
-    const { limit = 10, offset = 0, title, author, status } = queryDto;
+    const { limit = 10, page = 1, title, author, status } = queryDto;
+    const offset = (page - 1) * limit;
     const where: FindOptionsWhere<Book> = {};
 
     if (status) where.status = status;

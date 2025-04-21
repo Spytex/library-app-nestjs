@@ -1,8 +1,8 @@
-import { IsOptional, IsString, IsEnum, IsInt, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 import { BookStatus } from '../book.entity';
 
-export class FindBooksQueryDto {
+export class FindBooksQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsEnum(BookStatus)
   status?: BookStatus;
@@ -14,17 +14,4 @@ export class FindBooksQueryDto {
   @IsOptional()
   @IsString()
   author?: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  offset?: number;
 }

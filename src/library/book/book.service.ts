@@ -1,24 +1,25 @@
 import {
+  ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
-  Inject,
-  ConflictException,
 } from '@nestjs/common';
 import { BookStatus } from './book.entity';
-import { CreateBookDto } from './dto/create-book.dto';
-import { UpdateBookDto } from './dto/update-book.dto';
-import { FindBooksQueryDto } from './dto/find-books-query.dto';
-import {
-  IBookRepository,
-  BOOK_REPOSITORY,
-} from './repositories/book.repository.interface';
 import { BookDto } from './dto/book.dto';
+import { CreateBookDto } from './dto/create-book.dto';
+import { FindBooksQueryDto } from './dto/find-books-query.dto';
+import { UpdateBookDto } from './dto/update-book.dto';
+import {
+  BOOK_REPOSITORY,
+  IBookRepository,
+} from './repositories/book.repository.interface';
+import { IPaginatedResult, createPaginatedResponse } from '../../common/utils/pagination.utils';
 
 @Injectable()
 export class BookService {
   constructor(
     @Inject(BOOK_REPOSITORY)
-    private readonly bookRepository: IBookRepository,
+    protected readonly bookRepository: IBookRepository,
   ) {}
 
   async create(createBookDto: CreateBookDto): Promise<BookDto> {
@@ -32,36 +33,38 @@ export class BookService {
     }
     return this.bookRepository.create(createBookDto);
   }
+  
+  async findAll(query: FindBooksQueryDto): Promise<IPaginatedResult<BookDto>> {
+    const { page = 1, limit = 10, ...filters } = query;
 
-  async findAll(queryDto: FindBooksQueryDto): Promise<BookDto[]> {
-    return this.bookRepository.findAll(queryDto);
+    const items = await this.bookRepository.findAll(query);
+    const totalItems = await this.bookRepository.count(filters as any);
+
+    return createPaginatedResponse<BookDto>(items, totalItems, page, limit);
   }
-
+  
   async findOne(id: number): Promise<BookDto> {
-    const book = await this.bookRepository.findById(id);
-    if (!book) {
+    const item = await this.bookRepository.findById(id);
+    if (!item) {
       throw new NotFoundException(`Book with ID "${id}" not found`);
     }
-    return book;
+    return item;
+  }
+  
+  async update(id: number, updateDto: UpdateBookDto): Promise<BookDto> {
+    const updatedItem = await this.bookRepository.update(id, updateDto);
+    if (!updatedItem) {
+      throw new NotFoundException(`Book with ID "${id}" not found`);
+    }
+    return updatedItem;
   }
 
   async findOneByIsbn(isbn: string): Promise<BookDto | null> {
     return this.bookRepository.findByIsbn(isbn);
   }
 
-  async update(id: number, updateBookDto: UpdateBookDto): Promise<BookDto> {
-    if (updateBookDto.isbn) {
-      const existingBook = await this.bookRepository.findByIsbn(
-        updateBookDto.isbn,
-      );
-      if (existingBook && existingBook.id !== id) {
-        throw new ConflictException(
-          `Book with ISBN "${updateBookDto.isbn}" already exists.`,
-        );
-      }
-    }
-
-    const updatedBook = await this.bookRepository.update(id, updateBookDto);
+  async updateStatus(id: number, status: BookStatus): Promise<BookDto> {
+    const updatedBook = await this.bookRepository.updateStatus(id, status);
     if (!updatedBook) {
       throw new NotFoundException(`Book with ID "${id}" not found`);
     }
@@ -81,17 +84,11 @@ export class BookService {
 
     const deleted = await this.bookRepository.remove(id);
     if (!deleted) {
-      throw new NotFoundException(
-        `Book with ID "${id}" not found or could not be deleted.`,
-      );
-    }
-  }
-
-  async updateStatus(id: number, status: BookStatus): Promise<BookDto> {
-    const updatedBook = await this.bookRepository.updateStatus(id, status);
-    if (!updatedBook) {
       throw new NotFoundException(`Book with ID "${id}" not found`);
     }
-    return updatedBook;
+  }
+  
+  async count(filters: Partial<Omit<FindBooksQueryDto, 'page' | 'limit'>>): Promise<number> {
+    return this.bookRepository.count(filters);
   }
 }
