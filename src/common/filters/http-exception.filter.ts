@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { SentryExceptionCaptured } from '@sentry/nestjs';
 import { Request, Response } from 'express';
 import { IApiErrorResponse } from '../interfaces/api-response.interface';
 
@@ -13,6 +14,7 @@ import { IApiErrorResponse } from '../interfaces/api-response.interface';
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
 
+  @SentryExceptionCaptured()
   catch(exception: any, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const request = ctx.getRequest<Request>();

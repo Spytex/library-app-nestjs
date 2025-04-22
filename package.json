@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && npm run sentry:sourcemaps",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -24,7 +24,8 @@
     "typeorm": "typeorm-ts-node-commonjs -d ./data-source.ts",
     "typeorm:generate": "npm run typeorm -- migration:generate ./typeorm/migrations/migration",
     "typeorm:run": "npm run build && npm run typeorm -- migration:run",
-    "typeorm:revert": "npm run typeorm -- migration:revert"
+    "typeorm:revert": "npm run typeorm -- migration:revert",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org myown-g5 --project node-nestjs-3d ./dist && sentry-cli sourcemaps upload --org myown-g5 --project node-nestjs-3d ./dist"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -33,6 +34,8 @@
     "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^11.0.0",
+    "@sentry/cli": "^2.43.0",
+    "@sentry/nestjs": "^9.13.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "drizzle-orm": "^0.42.0",

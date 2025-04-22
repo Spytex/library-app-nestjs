@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { ResponseTransformerInterceptor } from './common/interceptors/response-transformer.interceptor';
+import './instrument';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
