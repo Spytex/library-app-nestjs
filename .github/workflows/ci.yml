@@ -1,0 +1,107 @@
+name: NestJS CI
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Create TypeORM schema setup script
+        run: |
+          cat > setup-test-db.ts << 'EOL'
+          import { DataSource } from 'typeorm';
+          import { config } from 'dotenv';
+          import * as path from 'path';
+
+          // Load test environment config
+          config({ path: path.resolve(process.cwd(), '.env.test') });
+
+          async function setupTestDatabase() {
+            console.log('Setting up test database schema...');
+            
+            const dataSource = new DataSource({
+              type: 'postgres',
+              host: process.env.DB_HOST || 'localhost',
+              port: parseInt(process.env.DB_PORT || '5432'),
+              username: process.env.DB_USERNAME || 'testuser',
+              password: process.env.DB_PASSWORD || 'testpassword',
+              database: process.env.DB_DATABASE || 'testdb',
+              entities: ['dist/**/*.entity.js'],
+              synchronize: true, // Force synchronize for test env
+            });
+            
+            await dataSource.initialize();
+            console.log('Database schema created successfully');
+            await dataSource.destroy();
+          }
+
+          setupTestDatabase().catch(error => {
+            console.error('Error setting up test database:', error);
+            process.exit(1);
+          });
+          EOL
+
+      - name: Setup test database schema
+        run: npx ts-node setup-test-db.ts
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: testuser
+          DB_PASSWORD: testpassword
+          DB_DATABASE: testdb
+          NODE_ENV: test
+
+      - name: Run unit tests
+        run: npm run test
+
+      - name: Run e2e tests
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: testuser
+          DB_PASSWORD: testpassword
+          DB_DATABASE: testdb
+          DB_ORM_TYPE: typeorm
+          NODE_ENV: test
+        run: npm run test:e2e
