@@ -1,98 +1,201 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Library Management System - NestJS API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+![NestJS](https://img.shields.io/badge/NestJS-11.0.1-red.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7.3-blue.svg)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+A comprehensive library management system API built with NestJS, providing functionality to manage books, users, loans, and reviews.
 
-## Description
+## 📚 Overview
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This application serves as a backend for a library management system, allowing librarians and users to:
 
-## Project setup
+- Manage books (add, update, find, delete)
+- Handle user registrations
+- Process book loans and returns
+- Track overdue books
+- Manage book reviews
+
+The system implements both standalone endpoints for direct resource management and integrated "Library" endpoints that provide more complex, business-logic driven operations.
+
+## 🛠️ Technologies Used
+
+- **Framework**: [NestJS](https://nestjs.com/) - A progressive Node.js framework
+- **Database ORM**:
+  - [TypeORM](https://typeorm.io/)
+  - [DrizzleORM](https://orm.drizzle.team/)
+- **Validation**: class-validator, class-transformer
+- **Error Tracking**: Sentry
+- **Testing**: Jest, Supertest
+- **API Documentation**: Postman Collection
+
+## ⚙️ Getting Started
+
+### Prerequisites
+
+- Node.js (v18+)
+- PostgreSQL database
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone <repository-url>
+   cd library-app-nestjs
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Configure environment variables:
+   Create a .env file based on the provided .env.example:
+
+   ```
+   DB_ORM_TYPE=typeorm # typeorm or drizzle
+   NODE_ENV=development # development or production
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_USERNAME=your_username
+   DB_PASSWORD=your_password
+   DB_DATABASE=library_db
+   PORT=3000
+   ```
+
+4. Run database migrations:
+
+   - For TypeORM:
+     ```bash
+     npm run typeorm:run
+     ```
+   - For DrizzleORM:
+     ```bash
+     npm run drizzle:migrate
+     ```
+
+5. Start the application:
+
+   ```bash
+   # Development mode
+   npm run start:dev
+
+   # Production mode
+   npm run build
+   npm run start:prod
+   ```
+
+## 📋 API Structure
+
+The API is organized into several resource groups:
+
+### Users
+
+- `POST /users` - Create a new user
+- `GET /users` - List all users (with pagination and filters)
+- `GET /users/:id` - Get user by ID
+- `PATCH /users/:id` - Update user details
+- `DELETE /users/:id` - Remove a user
+
+### Books
+
+- `POST /books` - Add a new book
+- `GET /books` - List all books (with pagination and filters)
+- `GET /books/:id` - Get book details
+- `PATCH /books/:id` - Update book information
+- `DELETE /books/:id` - Remove a book
+
+### Loans
+
+- `GET /loans` - List all loans
+- `GET /loans/:id` - Get loan details
+- `GET /users/:userId/loans` - Get loans for a specific user
+- `GET /books/:bookId/loans` - Get loans for a specific book
+- `PATCH /loans/:id/extend` - Extend a loan's due date
+
+### Library Management
+
+- `POST /library/loans` - Create a new book booking
+- `PATCH /library/loans/:id/pickup` - Mark a booked loan as active (picked up)
+- `PATCH /library/loans/:id/return` - Return a borrowed book
+
+### Reviews
+
+- `POST /reviews` or `POST /library/reviews` - Create a book review
+- `GET /reviews` - List all reviews
+- `GET /reviews/:id` - Get review details
+- `GET /users/:userId/reviews` - Get reviews by a specific user
+- `GET /books/:bookId/reviews` - Get reviews for a specific book
+- `DELETE /reviews/:id` - Remove a review
+
+## 📑 API Documentation
+
+A comprehensive Postman collection is included in the project, providing a ready-to-use interface for testing all API endpoints. The collection includes:
+
+- Organized endpoint folders by resource
+- Request examples with parameters
+- Description for each endpoint
+- Environment variables for easy configuration
+
+To use the Postman collection:
+
+1. Import the postman-collection.json file into Postman
+2. Create an environment with the `baseUrl` variable set to your API URL (default: http://localhost:3000)
+3. Use the provided requests to interact with the API
+
+## 🧪 Testing
+
+The application includes comprehensive test coverage:
 
 ```bash
-$ npm install
+# Run unit tests
+npm run test
+
+# Run e2e tests
+npm run test:e2e
 ```
 
-## Compile and run the project
+## 🔄 Database Migration
+
+### TypeORM
 
 ```bash
-# development
-$ npm run start
+# Generate migration
+npm run typeorm:generate
 
-# watch mode
-$ npm run start:dev
+# Run migrations
+npm run typeorm:run
 
-# production mode
-$ npm run start:prod
+# Revert migrations
+npm run typeorm:revert
 ```
 
-## Run tests
+### DrizzleORM
 
 ```bash
-# unit tests
-$ npm run test
+# Generate migration
+npm run drizzle:generate
 
-# e2e tests
-$ npm run test:e2e
+# Run migrations
+npm run drizzle:migrate
 
-# test coverage
-$ npm run test:cov
+# Explore database with DrizzleKit Studio
+npm run drizzle:studio
 ```
 
-## Deployment
+## ✨ Features
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- RESTful API design
+- Comprehensive validation and error handling
+- Database abstraction with support for multiple ORMs
+- Pagination for list endpoints
+- Filtering and searching capabilities
+- Detailed API documentation via Postman collection
+- Error tracking with Sentry
+- Comprehensive test suite
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+---
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Developed with ❤️ using [NestJS](https://nestjs.com/)

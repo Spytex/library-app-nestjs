@@ -1,0 +1,937 @@
+{
+	"info": {
+		"_postman_id": "122532af-759c-4b80-97f3-7bbbc60c9b3e",
+		"name": "Library App NestJS",
+		"description": "API endpoints for the Library App built with NestJS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "44040043"
+	},
+	"item": [
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe{{$randomInt}}@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Creates a new user."
+					},
+					"response": []
+				},
+				{
+					"name": "Find All Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users?limit=10&page=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "(Optional) Max items per page (default 10, max 100)"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "(Optional) Page number (default 1)"
+								},
+								{
+									"key": "name",
+									"value": "John",
+									"description": "(Optional) Filter by user name (case-insensitive, partial match)",
+									"disabled": true
+								},
+								{
+									"key": "email",
+									"value": "example.com",
+									"description": "(Optional) Filter by user email (case-insensitive, partial match)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Retrieves a paginated list of users with optional filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Find User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}"
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "1",
+									"description": "ID of the user to retrieve"
+								}
+							]
+						},
+						"description": "Retrieves a specific user by their ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Johnathan Doe Updated\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}"
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "1",
+									"description": "ID of the user to update"
+								}
+							]
+						},
+						"description": "Updates a specific user's details."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}"
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "1",
+									"description": "ID of the user to remove"
+								}
+							]
+						},
+						"description": "Removes a specific user."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints related to user management."
+		},
+		{
+			"name": "Books",
+			"item": [
+				{
+					"name": "Create Book",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"The Great Novel {{$randomInt}}\",\n  \"author\": \"Jane Smith\",\n  \"isbn\": \"978-3-16-148410-{{$randomInt}}\",\n  \"description\": \"A truly great novel.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/books",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"books"
+							]
+						},
+						"description": "Creates a new book."
+					},
+					"response": []
+				},
+				{
+					"name": "Find All Books",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/books?limit=10&page=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"books"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "(Optional) Max items per page (default 10, max 100)"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "(Optional) Page number (default 1)"
+								},
+								{
+									"key": "status",
+									"value": "AVAILABLE",
+									"description": "(Optional) Filter by book status (AVAILABLE, BOOKED, BORROWED)",
+									"disabled": true
+								},
+								{
+									"key": "title",
+									"value": "Novel",
+									"description": "(Optional) Filter by title (case-insensitive, partial match)",
+									"disabled": true
+								},
+								{
+									"key": "author",
+									"value": "Smith",
+									"description": "(Optional) Filter by author (case-insensitive, partial match)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Retrieves a paginated list of books with optional filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Find Book by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/books/{{bookId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"books",
+								"{{bookId}}"
+							],
+							"variable": [
+								{
+									"key": "bookId",
+									"value": "1",
+									"description": "ID of the book to retrieve"
+								}
+							]
+						},
+						"description": "Retrieves a specific book by its ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Book",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"An updated description.\",\n  \"status\": \"AVAILABLE\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/books/{{bookId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"books",
+								"{{bookId}}"
+							],
+							"variable": [
+								{
+									"key": "bookId",
+									"value": "1",
+									"description": "ID of the book to update"
+								}
+							]
+						},
+						"description": "Updates a specific book's details."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Book",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/books/{{bookId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"books",
+								"{{bookId}}"
+							],
+							"variable": [
+								{
+									"key": "bookId",
+									"value": "1",
+									"description": "ID of the book to remove"
+								}
+							]
+						},
+						"description": "Removes a specific book."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints related to book management."
+		},
+		{
+			"name": "Loans (Library)",
+			"item": [
+				{
+					"name": "Create Booking (Library)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": {{userId}},\n  \"bookId\": {{bookId}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/library/loans",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"library",
+								"loans"
+							]
+						},
+						"description": "Creates a new book booking for a user."
+					},
+					"response": []
+				},
+				{
+					"name": "Pickup Loan (Library)",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/library/loans/{{loanId}}/pickup",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"library",
+								"loans",
+								"{{loanId}}",
+								"pickup"
+							],
+							"variable": [
+								{
+									"key": "loanId",
+									"value": "1",
+									"description": "ID of the loan to mark as picked up"
+								}
+							]
+						},
+						"description": "Marks a booked loan as active (picked up)."
+					},
+					"response": []
+				},
+				{
+					"name": "Return Loan (Library)",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/library/loans/{{loanId}}/return",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"library",
+								"loans",
+								"{{loanId}}",
+								"return"
+							],
+							"variable": [
+								{
+									"key": "loanId",
+									"value": "1",
+									"description": "ID of the loan to mark as returned"
+								}
+							]
+						},
+						"description": "Marks an active loan as returned."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Loans (Library)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/library/users/{{userId}}/loans",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"library",
+								"users",
+								"{{userId}}",
+								"loans"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "ACTIVE",
+									"description": "(Optional) Filter by status (BOOKED, ACTIVE, RETURNED, OVERDUE)",
+									"disabled": true
+								},
+								{
+									"key": "isOverdue",
+									"value": "false",
+									"description": "(Optional) Filter for overdue loans (true/false)",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "1",
+									"description": "ID of the user"
+								}
+							]
+						},
+						"description": "Retrieves loans for a specific user."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Book Loans (Library)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/library/books/{{bookId}}/loans",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"library",
+								"books",
+								"{{bookId}}",
+								"loans"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "ACTIVE",
+									"description": "(Optional) Filter by status (BOOKED, ACTIVE, RETURNED, OVERDUE)",
+									"disabled": true
+								},
+								{
+									"key": "isOverdue",
+									"value": "false",
+									"description": "(Optional) Filter for overdue loans (true/false)",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "bookId",
+									"value": "1",
+									"description": "ID of the book"
+								}
+							]
+						},
+						"description": "Retrieves loans for a specific book."
+					},
+					"response": []
+				}
+			],
+			"description": "Loan actions managed via the Library service."
+		},
+		{
+			"name": "Loans (Standalone)",
+			"item": [
+				{
+					"name": "Find All Loans",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/loans",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"loans"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "userId",
+									"value": "1",
+									"description": "(Optional) Filter by user ID",
+									"disabled": true
+								},
+								{
+									"key": "bookId",
+									"value": "1",
+									"description": "(Optional) Filter by book ID",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "ACTIVE",
+									"description": "(Optional) Filter by status (BOOKED, ACTIVE, RETURNED, OVERDUE)",
+									"disabled": true
+								},
+								{
+									"key": "isOverdue",
+									"value": "false",
+									"description": "(Optional) Filter for overdue loans (true/false)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Retrieves a paginated list of all loans with optional filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Find Loan by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/loans/{{loanId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"loans",
+								"{{loanId}}"
+							],
+							"variable": [
+								{
+									"key": "loanId",
+									"value": "1",
+									"description": "ID of the loan"
+								}
+							]
+						},
+						"description": "Retrieves a specific loan by its ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Extend Loan",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/loans/{{loanId}}/extend",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"loans",
+								"{{loanId}}",
+								"extend"
+							],
+							"variable": [
+								{
+									"key": "loanId",
+									"value": "1",
+									"description": "ID of the loan to extend"
+								}
+							]
+						},
+						"description": "Extends the due date of an active loan."
+					},
+					"response": []
+				}
+			],
+			"description": "Standalone loan endpoints (potentially redundant or for specific use cases)."
+		},
+		{
+			"name": "Reviews (Library)",
+			"item": [
+				{
+					"name": "Create Review (Library)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": {{userId}},\n  \"bookId\": {{bookId}},\n  \"loanId\": {{loanId}}, \n  \"rating\": 5,\n  \"comment\": \"Excellent book! Highly recommended.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/library/reviews",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"library",
+								"reviews"
+							]
+						},
+						"description": "Creates a new review for a book, optionally linked to a loan."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Reviews (Library)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/library/users/{{userId}}/reviews",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"library",
+								"users",
+								"{{userId}}",
+								"reviews"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "rating",
+									"value": "5",
+									"description": "(Optional) Filter by rating (1-5)",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "1",
+									"description": "ID of the user"
+								}
+							]
+						},
+						"description": "Retrieves reviews submitted by a specific user."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Book Reviews (Library)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/library/books/{{bookId}}/reviews",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"library",
+								"books",
+								"{{bookId}}",
+								"reviews"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "rating",
+									"value": "4",
+									"description": "(Optional) Filter by rating (1-5)",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "bookId",
+									"value": "1",
+									"description": "ID of the book"
+								}
+							]
+						},
+						"description": "Retrieves reviews for a specific book."
+					},
+					"response": []
+				}
+			],
+			"description": "Review actions managed via the Library service."
+		},
+		{
+			"name": "Reviews (Standalone)",
+			"item": [
+				{
+					"name": "Find All Reviews",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reviews",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reviews"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "userId",
+									"value": "1",
+									"description": "(Optional) Filter by user ID",
+									"disabled": true
+								},
+								{
+									"key": "bookId",
+									"value": "1",
+									"description": "(Optional) Filter by book ID",
+									"disabled": true
+								},
+								{
+									"key": "rating",
+									"value": "4",
+									"description": "(Optional) Filter by rating (1-5)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Retrieves a paginated list of all reviews with optional filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Find Review by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reviews/{{reviewId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reviews",
+								"{{reviewId}}"
+							],
+							"variable": [
+								{
+									"key": "reviewId",
+									"value": "1",
+									"description": "ID of the review"
+								}
+							]
+						},
+						"description": "Retrieves a specific review by its ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Review",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/reviews/{{reviewId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reviews",
+								"{{reviewId}}"
+							],
+							"variable": [
+								{
+									"key": "reviewId",
+									"value": "1",
+									"description": "ID of the review to remove"
+								}
+							]
+						},
+						"description": "Removes a specific review."
+					},
+					"response": []
+				}
+			],
+			"description": "Standalone review endpoints (potentially redundant or for specific use cases)."
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "bookId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "loanId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "reviewId",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}
